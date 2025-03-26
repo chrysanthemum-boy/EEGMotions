@@ -1,0 +1,8 @@
+{
+  "@@locale": "zh",
+  "appTitle": "脑电压力监测",
+  "currentStatus": "当前状态",
+  "stressLevel": "压力值",
+  "stress": "有压力",
+  "relaxed": "放松"
+}
