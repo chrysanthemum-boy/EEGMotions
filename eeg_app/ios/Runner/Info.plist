@@ -3,9 +3,9 @@
 <plist version="1.0">
 <dict>
 	<key>NSBluetoothAlwaysUsageDescription</key>
-	<string>App needs Bluetooth to connect to devices.</string>
+	<string>This app uses Bluetooth to receive EEG signals from Raspberry Pi.</string>
 	<key>NSBluetoothPeripheralUsageDescription</key>
-	<string>App uses Bluetooth for device connection.</string>
+	<string>Need Bluetooth to connect EEG device.</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>

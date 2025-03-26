@@ -15,6 +15,8 @@
 		97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000F007C117D /* Assets.xcassets */; };
 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
 		B75A92C62D936F4C00ECF2CC /* EEGNet.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = B75A92C52D936F4C00ECF2CC /* EEGNet.mlpackage */; };
+		B75A92CC2D945B5A00ECF2CC /* BluetoothManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B75A92CB2D945B5A00ECF2CC /* BluetoothManager.swift */; };
+		B75A92CE2D945D4600ECF2CC /* PredictEEG.swift in Sources */ = {isa = PBXBuildFile; fileRef = B75A92CD2D945D4600ECF2CC /* PredictEEG.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -59,6 +61,8 @@
 		B75A92C52D936F4C00ECF2CC /* EEGNet.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; name = EEGNet.mlpackage; path = "/Users/fann/Documents/ucl_project/COMP0183-Designing-Sensor-Systems/EEG-app/eeg_app/ios/Runner/EEGNet.mlpackage"; sourceTree = "<absolute>"; };
 		B75A92C92D937BE700ECF2CC /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/Main.strings"; sourceTree = "<group>"; };
 		B75A92CA2D937BE700ECF2CC /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/LaunchScreen.strings"; sourceTree = "<group>"; };
+		B75A92CB2D945B5A00ECF2CC /* BluetoothManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BluetoothManager.swift; sourceTree = "<group>"; };
+		B75A92CD2D945D4600ECF2CC /* PredictEEG.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PredictEEG.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -113,6 +117,8 @@
 		97C146F01CF9000F007C117D /* Runner */ = {
 			isa = PBXGroup;
 			children = (
+				B75A92CD2D945D4600ECF2CC /* PredictEEG.swift */,
+				B75A92CB2D945B5A00ECF2CC /* BluetoothManager.swift */,
 				B75A92C52D936F4C00ECF2CC /* EEGNet.mlpackage */,
 				97C146FA1CF9000F007C117D /* Main.storyboard */,
 				97C146FD1CF9000F007C117D /* Assets.xcassets */,
@@ -277,6 +283,8 @@
 			files = (
 				74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */,
 				B75A92C62D936F4C00ECF2CC /* EEGNet.mlpackage in Sources */,
+				B75A92CE2D945D4600ECF2CC /* PredictEEG.swift in Sources */,
+				B75A92CC2D945B5A00ECF2CC /* BluetoothManager.swift in Sources */,
 				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
