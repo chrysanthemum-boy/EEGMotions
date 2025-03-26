@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'monitor_page.dart';
-import 'test_page.dart';
+import 'pages/monitor_page.dart';
+import 'pages/test_page.dart';
+import 'pages/bluetooth_connect_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -36,11 +37,13 @@ class _HomeScreenState extends State<HomeScreen> {
   final _pages = const [
     TestPage(),
     MonitorPage(),
+    BluetoothConnectPage(),
   ];
 
   final _titles = [
     "🧪 Single Test",
     "🧠 Real-time Monitor",
+    "📡 Bluetooth Connect",
   ];
 
   @override
@@ -59,6 +62,10 @@ class _HomeScreenState extends State<HomeScreen> {
           BottomNavigationBarItem(
             icon: Icon(Icons.monitor_heart),
             label: "Monitor",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.bluetooth),
+            label: "Connect",
           ),
         ],
       ),

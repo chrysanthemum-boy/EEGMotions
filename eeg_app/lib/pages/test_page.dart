@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'coreml_service.dart';
+import '../service/coreml_service.dart';
 import 'dart:math';
 
 class TestPage extends StatefulWidget {

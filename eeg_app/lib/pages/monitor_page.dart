@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
-import 'coreml_service.dart';
+import '../service/coreml_service.dart';
 
 class MonitorPage extends StatefulWidget {
   const MonitorPage({super.key});
