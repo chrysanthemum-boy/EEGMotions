@@ -1,6 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import '../service/bluetooth_service.dart';
+import '../provider/bluetooth_provider.dart';
+import '../provider/eeg_provider.dart';
 
 class BluetoothConnectPage extends StatefulWidget {
   const BluetoothConnectPage({super.key});
@@ -10,104 +13,156 @@ class BluetoothConnectPage extends StatefulWidget {
 }
 
 class _BluetoothConnectPageState extends State<BluetoothConnectPage> {
-  String _status = "Disconnected";
-  List<String> _logs = [];
-  List<Map<String, String>> _devices = [];
-
-  static const EventChannel _deviceStream = EventChannel("bluetooth_device_stream");
+  StreamSubscription? _deviceSub;
+  // StreamSubscription? _eegSub;
 
   @override
   void initState() {
     super.initState();
-    _listenToScanResults();
+    _subscribeToStreams();
   }
 
-  void _listenToScanResults() {
-    _deviceStream.receiveBroadcastStream().listen((event) {
-      if (event is List) {
-        final devices = event.map<Map<String, String>>((e) => {
-          'name': e['name'] ?? "(no name)",
-          'id': e['id'] ?? "",
-        }).toList();
+  void _subscribeToStreams() {
+    final bluetoothProvider = Provider.of<BluetoothProvider>(context, listen: false);
 
-        setState(() {
-          _devices = devices;
-        });
+    _deviceSub = BluetoothService.devicesStream.listen((devices) {
+      if (!mounted) return;
+      for (var device in devices) {
+        bluetoothProvider.addDevice(device['id'], device['name']);
       }
-    }, onError: (err) {
-      setState(() {
-        _logs.add("❌ Error receiving device list: $err");
-      });
     });
+
+    // _eegSub = BluetoothService.eegDataStream.listen((data) {
+      
+    //   Provider.of<EEGProvider>(context, listen: false).addEEGData(data);
+    // });
   }
 
-  void _startScan() async {
-    await BluetoothService.startScan();
-    setState(() {
-      _status = "Scanning...";
-      _logs.add("Started scanning...");
-    });
+  Future<void> _connectTo(String deviceId) async {
+    final provider = Provider.of<BluetoothProvider>(context, listen: false);
+    try {
+      await BluetoothService.connectToDevice(deviceId);
+      provider.setConnectedDevice(deviceId);
+      provider.addLog("Connected to $deviceId");
+
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Text("✅ Connected"),
+            content: Text("Successfully connected to $deviceId"),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text("OK"),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      provider.addLog("❌ Connection failed to $deviceId");
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Text("❌ Connection Failed"),
+            content: Text("Could not connect to $deviceId.\\nError: \$e"),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text("OK"),
+              ),
+            ],
+          ),
+        );
+      }
+    }
   }
 
-  void _stopScan() async {
-    await BluetoothService.stopScan();
-    setState(() {
-      _status = "Stopped scan";
-      _logs.add("Stopped scanning.");
-    });
-  }
-
-  void _connectTo(String deviceId) async {
-    await BluetoothService.connectToDevice(deviceId);
-    setState(() {
-      _status = "Connected to $deviceId";
-      _logs.add("Connected to $deviceId");
-    });
+  @override
+  void dispose() {
+    _deviceSub?.cancel();
+    // _eegSub?.cancel();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final bluetooth = context.watch<BluetoothProvider>();
+
     return Scaffold(
-      appBar: AppBar(title: const Text("🔵 Bluetooth Debug")),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text("Status: $_status", style: const TextStyle(fontSize: 18)),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 12,
-              children: [
-                ElevatedButton(onPressed: _startScan, child: const Text("Start Scan")),
-                ElevatedButton(onPressed: _stopScan, child: const Text("Stop Scan")),
-              ],
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            child: Text(
+              bluetooth.isScanning
+                  ? "Status: Scanning..."
+                  : "Status: ${bluetooth.connectedDeviceId != null ? 'Connected to ${bluetooth.connectedDeviceId}' : 'Disconnected'}",
+              style: const TextStyle(fontSize: 16),
             ),
-            const SizedBox(height: 16),
-            const Text("Nearby Devices:", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            Expanded(
-              child: ListView.builder(
-                itemCount: _devices.length,
-                itemBuilder: (context, index) {
-                  final device = _devices[index];
-                  return ListTile(
-                    title: Text(device['name'] ?? "(no name)"),
-                    subtitle: Text(device['id'] ?? ""),
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: Text("Nearby Devices:", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          ),
+          Expanded(
+            child: ListView.builder(
+              itemCount: bluetooth.devices.length,
+              itemBuilder: (context, index) {
+                final device = bluetooth.devices[index];
+                return Card(
+                  margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  child: ListTile(
+                    title: Text(device.name),
+                    subtitle: Text(device.id),
                     trailing: ElevatedButton(
-                      onPressed: () => _connectTo(device['id']!),
+                      onPressed: () => _connectTo(device.id),
                       child: const Text("Connect"),
                     ),
-                  );
+                  ),
+                );
+              },
+            ),
+          ),
+          ExpansionTile(
+            title: const Text("📜 Logs", style: TextStyle(fontWeight: FontWeight.bold)),
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: bluetooth.logs.map((log) => Text(log)).toList(),
+                ),
+              )
+            ],
+          ),
+        ],
+      ),
+      bottomNavigationBar: BottomAppBar(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        child: Row(
+          children: [
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  BluetoothService.startScan();
+                  context.read<BluetoothProvider>().startScan();
                 },
+                icon: const Icon(Icons.search),
+                label: const Text("Start Scan"),
               ),
             ),
-            const Divider(),
-            const Text("Logs:", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            Expanded(
-              child: ListView.builder(
-                itemCount: _logs.length,
-                itemBuilder: (context, index) => Text(_logs[index]),
-              ),
+            const SizedBox(width: 12),
+            ElevatedButton(
+              onPressed: () {
+                BluetoothService.stopScan();
+                context.read<BluetoothProvider>().stopScan();
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.grey.shade300),
+              child: const Text("Stop"),
             ),
           ],
         ),

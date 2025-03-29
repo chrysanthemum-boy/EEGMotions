@@ -1,10 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'pages/monitor_page.dart';
 import 'pages/test_page.dart';
 import 'pages/bluetooth_connect_page.dart';
+import 'pages/eeg_display_page.dart';
+import 'provider/eeg_provider.dart';
+import 'provider/bluetooth_provider.dart';
+import 'provider/monitor_provider.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => EEGProvider()),
+        ChangeNotifierProvider(create: (_) => BluetoothProvider()),
+        ChangeNotifierProvider(create: (_) => MonitorProvider()),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -18,6 +32,11 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
         useMaterial3: true,
+        bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+          backgroundColor: Colors.white,
+          selectedItemColor: Colors.indigo,
+          unselectedItemColor: Colors.grey,
+        ),
       ),
       home: const HomeScreen(),
     );
@@ -34,15 +53,17 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
 
-  final _pages = const [
-    TestPage(),
+  final _pages = [
+    // TestPage(),
     MonitorPage(),
+    EEGDisplayPage(),
     BluetoothConnectPage(),
   ];
 
   final _titles = [
-    "🧪 Single Test",
+    // "🧪 Single Test",
     "🧠 Real-time Monitor",
+    "📈 EEG Data Display",
     "📡 Bluetooth Connect",
   ];
 
@@ -55,13 +76,17 @@ class _HomeScreenState extends State<HomeScreen> {
         currentIndex: _selectedIndex,
         onTap: (i) => setState(() => _selectedIndex = i),
         items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.flash_on),
-            label: "Test",
-          ),
+          // BottomNavigationBarItem(
+          //   icon: Icon(Icons.flash_on),
+          //   label: "Test",
+          // ),
           BottomNavigationBarItem(
             icon: Icon(Icons.monitor_heart),
             label: "Monitor",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.data_usage),
+            label: "Display",
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.bluetooth),

@@ -23,6 +23,9 @@ import CoreBluetooth
     // 注册 Bluetooth 通道
     registerBluetoothChannel(with: controller.binaryMessenger)
 
+    // 注册语音播报通道
+    registerAccessibilityChannel(with: controller.binaryMessenger)
+
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 
@@ -77,6 +80,23 @@ import CoreBluetooth
       }
     }
   }
+
+  // 注册语音播报
+  private func registerAccessibilityChannel(with message: FlutterBinaryMessenger) {
+    let accessibilityChannel = FlutterMethodChannel(name: "accessibility_channel", binaryMessenger: message)
+    accessibilityChannel.setMethodCallHandler { call, result in
+      if call.method == "speak",
+        let args = call.arguments as? [String: Any],
+        let message = args["message"] as? String {
+          print("🔊 \(message)")
+          UIAccessibility.post(notification: .announcement, argument: message)
+          result(nil)
+      } else {
+        result(FlutterMethodNotImplemented)
+      }
+    }
+  }
+
 }
 
 

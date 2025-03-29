@@ -1,7 +1,9 @@
 import 'dart:async';
-import 'dart:math';
 import 'package:flutter/material.dart';
-import '../service/coreml_service.dart';
+import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import '../provider/monitor_provider.dart';
+import '../service/bluetooth_service.dart';
 
 class MonitorPage extends StatefulWidget {
   const MonitorPage({super.key});
@@ -11,35 +13,30 @@ class MonitorPage extends StatefulWidget {
 }
 
 class _MonitorPageState extends State<MonitorPage> {
-  String _status = "Loading...";
-  double _stressValue = 0.0;
   late Timer _timer;
+  static const MethodChannel _voiceChannel = MethodChannel('accessibility_channel');
 
   @override
   void initState() {
     super.initState();
-    startMonitoring();
-  }
-
-  void startMonitoring() {
     _timer = Timer.periodic(const Duration(seconds: 2), (_) {
-      runEEGPredict();
+      context.read<MonitorProvider>().runPrediction().then((_) {
+        final provider = context.read<MonitorProvider>();
+        if (provider.voiceEnabled && provider.status == "Stress") {
+          _announce("Stress detected.");
+        }
+      });
     });
   }
 
-  Future<void> runEEGPredict() async {
-    // Simulate EEG input data (you can replace this with actual BLE-collected data)
-    List<double> eegInput = List.generate(16000, (_) => Random().nextDouble());
+  void _announce(String message) {
+    _voiceChannel.invokeMethod("speak", {"message": message});
+  }
 
-    String result = await CoreMLService.runPrediction(eegInput);
-    setState(() {
-      if (result == "Stress" || result == "Relaxed") {
-        _status = result;
-        _stressValue = result == "Stress" ? 0.85 : 0.12; // Simulated value
-      } else {
-        _status = "Error";
-      }
-    });
+  void _toggleVoice() {
+    final provider = context.read<MonitorProvider>();
+    provider.toggleVoice();
+    _announce(provider.voiceEnabled ? "Voice alert enabled" : "Voice alert disabled");
   }
 
   @override
@@ -50,9 +47,10 @@ class _MonitorPageState extends State<MonitorPage> {
 
   @override
   Widget build(BuildContext context) {
-    bool isStress = _status == "Stress";
+    final provider = context.watch<MonitorProvider>();
+    final isStress = provider.status == "Stress";
+
     return Scaffold(
-      // appBar: AppBar(title: const Text("🧠 Real-time Stress Monitoring")),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(32),
@@ -68,7 +66,9 @@ class _MonitorPageState extends State<MonitorPage> {
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: isStress ? Colors.redAccent.withOpacity(0.6) : Colors.blueAccent.withOpacity(0.6),
+                      color: isStress
+                          ? Colors.redAccent.withOpacity(0.6)
+                          : Colors.blueAccent.withOpacity(0.6),
                       blurRadius: 25,
                       spreadRadius: 5,
                     )
@@ -82,20 +82,34 @@ class _MonitorPageState extends State<MonitorPage> {
                 ),
               ),
               const SizedBox(height: 32),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.center, // 👈 横轴居中
-                children: [
-                  Text(
-                    "Current Status: $_status",
-                    style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-                    textAlign: TextAlign.center, // 👈 文本居中对齐（用于多行）
-                  ),
-                ],
+              Text(
+                "Current Status: ${provider.status}",
+                style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
               ),
               const SizedBox(height: 12),
               Text(
-                "Stress Level: ${(_stressValue * 100).toStringAsFixed(1)}%",
+                "Stress Level: ${(provider.stressValue * 100).toStringAsFixed(1)}%",
                 style: const TextStyle(fontSize: 20, color: Colors.grey),
+              ),
+              const SizedBox(height: 32),
+
+              // EEG 数据监听（可选）
+              StreamBuilder<List<int>>(
+                stream: BluetoothService.eegDataStream,
+                builder: (context, snapshot) {
+                  if (snapshot.hasData) {
+                    print("📡 EEG Received: ${snapshot.data}");
+                  }
+                  return const SizedBox.shrink();
+                },
+              ),
+
+              const SizedBox(height: 16),
+              ElevatedButton.icon(
+                onPressed: _toggleVoice,
+                icon: Icon(provider.voiceEnabled ? Icons.volume_off : Icons.volume_up),
+                label: Text(provider.voiceEnabled ? "Disable Voice Alert" : "Enable Voice Alert"),
               ),
             ],
           ),
