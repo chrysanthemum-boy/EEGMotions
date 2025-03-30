@@ -14,13 +14,3 @@ class CoreMLService {
       };
     });
 }
-
-// class CoreMLService {
-//   static const EventChannel _eventChannel = EventChannel("coreml_predictor");
-
-//   static final Stream<Map<String, dynamic>> coremlResultStream =
-//       _eventChannel.receiveBroadcastStream().map((event) {
-//         return Map<String, dynamic>.from(event);
-//       });
-// }
-

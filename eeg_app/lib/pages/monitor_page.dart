@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../provider/monitor_provider.dart';
+import '../provider/eeg_provider.dart';
 import '../service/coreml_service.dart';
 
 class MonitorPage extends StatefulWidget {
@@ -27,7 +28,7 @@ class _MonitorPageState extends State<MonitorPage> {
     _timer = Timer.periodic(const Duration(seconds: 2), (_) {
       context.read<MonitorProvider>().simulatePrediction();
     });
-    // context.read<MonitorProvider>().startListening();
+
     // 监听 CoreML 推理结果
     _coremlSub = CoreMLService.coremlResultStream.listen((event) {
       final provider = context.read<MonitorProvider>();
@@ -37,7 +38,6 @@ class _MonitorPageState extends State<MonitorPage> {
           "🧠 Received CoreML result: stress=$stress, probability=${prob.toStringAsFixed(3)}"
       );
       provider.updatePrediction(stress, prob);
-      
       if (provider.voiceEnabled && stress == "Stress") {
         _announce("Stress detected.");
       }
@@ -60,14 +60,18 @@ class _MonitorPageState extends State<MonitorPage> {
     _timer.cancel();
     super.dispose();
   }
-  @override
+
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<MonitorProvider>();
+    final eeg = context.watch<EEGProvider>();
     final relaxedValue = provider.status == "Relaxed" ? 0.0 : provider.stressValue;
     final dynamicColor = Color.lerp(Colors.blueAccent, Colors.redAccent, relaxedValue)!;
     final circleSize = 160.0 + relaxedValue * 80;
     final isStress = provider.status == "Stress";
+    final history = eeg.history;
+    final isConnected = history.isNotEmpty && history.any((ch) => ch.isNotEmpty);
+    var hasAnnounced = false;
 
     return Scaffold(
       body: SafeArea(
@@ -140,37 +144,61 @@ class _MonitorPageState extends State<MonitorPage> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Text(
-                      //   "Please connect the EEG device to start monitoring.",
-                      //   style: TextStyle(
-                      //     fontSize: 28, 
-                      //     fontWeight: FontWeight.bold,
-                      //     color: Colors.black12),
-                      //   textAlign: TextAlign.center,
-                        
-                      // ),
-                      Text(
-                        "Current Status: ${provider.status}",
-                        style: TextStyle(
-                          fontSize: 28, 
-                          fontWeight: FontWeight.bold,
-                          color: dynamicColor),
-                        textAlign: TextAlign.center,
-                        
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        "Stress Level: ${(relaxedValue * 100).toStringAsFixed(1)}%",
-                        style: const TextStyle(fontSize: 20, color: Colors.grey),
-                      ),
-                      const SizedBox(height: 24),
-                      ElevatedButton.icon(
-                        onPressed: _toggleVoice,
-                        icon: Icon(provider.voiceEnabled ? Icons.volume_off : Icons.volume_up),
-                        label: Text(provider.voiceEnabled
-                            ? "Disable Voice Alert"
-                            : "Enable Voice Alert"),
-                      ),
+                      if (!isConnected) ...[
+                        // 👇 提示文字：未连接时显示
+                        Text(
+                          "Please connect the EEG device to start monitoring.",
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+
+                        // 👇 自动语音播报（只播报一次）
+                        Builder(builder: (_) {
+                          if (!hasAnnounced) {
+                            Future.delayed(Duration.zero, () {
+                              _announce("Please connect the EEG device to start monitoring.");
+                              hasAnnounced = true;
+                            });
+                          }
+                          return const SizedBox.shrink();
+                        }),
+                      ] else ...[
+                        Text(
+                          "Current Status: ",
+                          style: TextStyle(
+                            fontSize: 28, 
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey),
+                          textAlign: TextAlign.center,
+                          
+                        ),
+                        Text(
+                          provider.status,
+                          style: TextStyle(
+                            fontSize: 28, 
+                            fontWeight: FontWeight.bold,
+                            color: dynamicColor),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          "Stress Level: ${(relaxedValue * 100).toStringAsFixed(1)}%",
+                          style: const TextStyle(fontSize: 20, color: Colors.grey),
+                        ),
+                        const SizedBox(height: 24),
+                        ElevatedButton.icon(
+                          onPressed: _toggleVoice,
+                          icon: Icon(provider.voiceEnabled ? Icons.volume_off : Icons.volume_up),
+                          label: Text(provider.voiceEnabled
+                              ? "Disable Voice Alert"
+                              : "Enable Voice Alert"),
+                        ),
+                      ],
                     ],
                   ),
                 ),

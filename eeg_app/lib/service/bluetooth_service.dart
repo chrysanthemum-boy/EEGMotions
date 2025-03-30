@@ -17,7 +17,7 @@ class BluetoothService {
     await _channel.invokeMethod('connect', {"id": id});
   }
 
-  /// ✅ 监听设备列表更新
+  // ✅ 监听设备列表更新
   static Stream<List<Map<String, dynamic>>> get devicesStream =>
     _deviceStream.receiveBroadcastStream().map((event) {
       final List raw = event as List;
@@ -27,7 +27,7 @@ class BluetoothService {
       }).toList();
     });
 
-/// ✅ 直接监听 Flutter 原生端推送的解码数据（List<double>）
+  // ✅ 直接监听 Flutter 原生端推送的解码数据（List<double>）
   static Stream<List<double>> get eegDataStream =>
       _eegDataStream.receiveBroadcastStream().map((event) {
         return List<double>.from(event);
