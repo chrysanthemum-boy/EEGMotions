@@ -30,26 +30,31 @@ import CoreBluetooth
   }
 
   // 📦 注册 CoreML 推理方法通道
-  private func registerCoreMLChannel(with messenger: FlutterBinaryMessenger) {
-    let channel = FlutterMethodChannel(name: "coreml_predictor", binaryMessenger: messenger)
-    channel.setMethodCallHandler { (call: FlutterMethodCall, result: @escaping FlutterResult) in
-      if call.method == "predict" {
-        guard let args = call.arguments as? [String: Any],
-              let input = args["input"] as? [Double] else {
-          result(FlutterError(code: "INVALID_INPUT", message: "Expected input as [Double]", details: nil))
-          return
-        }
+  // private func registerCoreMLChannel(with messenger: FlutterBinaryMessenger) {
+  //   let channel = FlutterMethodChannel(name: "coreml_predictor", binaryMessenger: messenger)
+  //   channel.setMethodCallHandler { (call: FlutterMethodCall, result: @escaping FlutterResult) in
+  //     if call.method == "predict" {
+  //       guard let args = call.arguments as? [String: Any],
+  //             let input = args["input"] as? [Double] else {
+  //         result(FlutterError(code: "INVALID_INPUT", message: "Expected input as [Double]", details: nil))
+  //         return
+  //       }
 
-        if let prediction = predictEEG(inputData: input) {
-          result(prediction)
-        } else {
-          result(FlutterError(code: "PREDICT_FAIL", message: "Prediction failed", details: nil))
-        }
-      } else {
-        result(FlutterMethodNotImplemented)
-      }
-    }
+  //       if let prediction = predictEEG(inputData: input) {
+  //         result(prediction)
+  //       } else {
+  //         result(FlutterError(code: "PREDICT_FAIL", message: "Prediction failed", details: nil))
+  //       }
+  //     } else {
+  //       result(FlutterMethodNotImplemented)
+  //     }
+  //   }
+  // }
+  private func registerCoreMLChannel(with messenger: FlutterBinaryMessenger) {
+    let eventChannel = FlutterEventChannel(name: "coreml_predictor", binaryMessenger: messenger)
+    eventChannel.setStreamHandler(CoreMLStreamHandler())
   }
+
 
   // 📡 注册蓝牙通道
   private func registerBluetoothChannel(with messenger: FlutterBinaryMessenger) {

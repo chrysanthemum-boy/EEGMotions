@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../service/bluetooth_service.dart';
 import '../provider/bluetooth_provider.dart';
-import '../provider/eeg_provider.dart';
 
 class BluetoothConnectPage extends StatefulWidget {
   const BluetoothConnectPage({super.key});
@@ -14,7 +13,6 @@ class BluetoothConnectPage extends StatefulWidget {
 
 class _BluetoothConnectPageState extends State<BluetoothConnectPage> {
   StreamSubscription? _deviceSub;
-  // StreamSubscription? _eegSub;
 
   @override
   void initState() {
@@ -31,11 +29,6 @@ class _BluetoothConnectPageState extends State<BluetoothConnectPage> {
         bluetoothProvider.addDevice(device['id'], device['name']);
       }
     });
-
-    // _eegSub = BluetoothService.eegDataStream.listen((data) {
-      
-    //   Provider.of<EEGProvider>(context, listen: false).addEEGData(data);
-    // });
   }
 
   Future<void> _connectTo(String deviceId) async {
@@ -83,7 +76,6 @@ class _BluetoothConnectPageState extends State<BluetoothConnectPage> {
   @override
   void dispose() {
     _deviceSub?.cancel();
-    // _eegSub?.cancel();
     super.dispose();
   }
 

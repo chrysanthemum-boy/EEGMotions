@@ -28,15 +28,21 @@ class BluetoothService {
     });
 
   /// ✅ 监听 EEGPi 设备传来的数据
+  // static Stream<List<int>> get eegDataStream =>
+  //   _eegDataStream.receiveBroadcastStream().map((event) {
+  //     final List<int> raw = List<int>.from(event);
+  //     List<int> decoded = [];
+  //     for (int i = 0; i < raw.length; i += 3) {
+  //       decoded.add(decodeSigned24Bit(raw.sublist(i, i + 3)));
+  //     }
+  //     // print(decoded);
+  //     return decoded;
+  //   });
+/// ✅ 直接监听 Flutter 原生端推送的解码数据（List<int>）
   static Stream<List<int>> get eegDataStream =>
-    _eegDataStream.receiveBroadcastStream().map((event) {
-      final List<int> raw = List<int>.from(event);
-      List<int> decoded = [];
-      for (int i = 0; i < raw.length; i += 3) {
-        decoded.add(decodeSigned24Bit(raw.sublist(i, i + 3)));
-      }
-      return decoded;
-    });
+      _eegDataStream.receiveBroadcastStream().map((event) {
+        return List<int>.from(event);
+      });
 
 
   

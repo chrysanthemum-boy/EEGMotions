@@ -43,7 +43,7 @@ class _EEGDisplayPageState extends State<EEGDisplayPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("📈 EEG Chart")),
+      // appBar: AppBar(title: const Text("📈 EEG Chart")),
       body: Consumer<EEGProvider>(
         builder: (context, eeg, _) {
           final history = eeg.history;

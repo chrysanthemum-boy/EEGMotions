@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'pages/monitor_page.dart';
-import 'pages/test_page.dart';
+// import 'pages/test_page.dart';
 import 'pages/bluetooth_connect_page.dart';
 import 'pages/eeg_display_page.dart';
 import 'provider/eeg_provider.dart';
@@ -63,7 +63,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final _titles = [
     // "🧪 Single Test",
     "🧠 Real-time Monitor",
-    "📈 EEG Data Display",
+    "📈 EEG Chart",
     "📡 Bluetooth Connect",
   ];
 

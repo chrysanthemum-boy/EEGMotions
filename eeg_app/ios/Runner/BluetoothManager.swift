@@ -120,22 +120,49 @@ class BluetoothManager: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate
         }
     }
 
+    // func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
+    //     if let error = error {
+    //         print("❌ 接收数据错误: \(error.localizedDescription)")
+    //         return
+    //     }
+
+    //     guard let value = characteristic.value else {
+    //         print("⚠️ 数据为空")
+    //         return
+    //     }
+
+    //     let data = [UInt8](value)
+    //     print("📥 收到 EEG 数据: \(data)")
+
+    //     eegEventSink?(data)
+    // }
     func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
-        if let error = error {
-            print("❌ 接收数据错误: \(error.localizedDescription)")
-            return
-        }
-
-        guard let value = characteristic.value else {
-            print("⚠️ 数据为空")
-            return
-        }
-
-        let data = [UInt8](value)
-        print("📥 收到 EEG 数据: \(data)")
-
-        eegEventSink?(data)
+    if let error = error {
+        print("❌ 接收数据错误: \(error.localizedDescription)")
+        return
     }
+
+    guard let value = characteristic.value else {
+        print("⚠️ 数据为空")
+        return
+    }
+
+    let rawBytes = [UInt8](value)
+    print("📥 收到原始 EEG 数据: \(rawBytes)")
+
+    var decoded: [Int] = []
+
+    // 解码为 signed 24-bit int
+    for i in stride(from: 0, to: min(rawBytes.count, 48), by: 3) {
+        let raw = (Int(rawBytes[i]) << 16) | (Int(rawBytes[i + 1]) << 8) | Int(rawBytes[i + 2])
+        let signed = raw >= 0x800000 ? raw - 0x1000000 : raw
+        decoded.append(signed)
+    }
+
+    print("✅ 解码 EEG 数据: \(decoded)")
+    eegEventSink?(decoded) // 直接发送 Int 数组到 Flutter
+}
+
 }
 
 // MARK: - Stream Handlers
