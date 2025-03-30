@@ -6,14 +6,14 @@ class EEGProvider extends ChangeNotifier {
   static const int channelCount = 16;
   static const int maxLength = 30;
 
-  final List<List<int>> _history = List.generate(channelCount, (_) => []);
+  final List<List<double>> _history = List.generate(channelCount, (_) => []);
 
-  List<List<int>> get history => _history;
+  List<List<double>> get history => _history;
 
   Timer? _simulationTimer;
 
   /// 添加来自 BLE 的 EEG 数据（16 通道）
-  void addEEGData(List<int> data) {
+  void addEEGData(List<double> data) {
     if (data.length != channelCount) return;
 
     for (int i = 0; i < channelCount; i++) {
@@ -29,7 +29,7 @@ class EEGProvider extends ChangeNotifier {
   void startSimulation({Duration interval = const Duration(milliseconds: 500)}) {
     stopSimulation(); // 确保只启动一个 timer
     _simulationTimer = Timer.periodic(interval, (_) {
-      final mock = List.generate(channelCount, (i) => 40 + i + Random().nextInt(20));
+      final mock = List.generate(channelCount, (i) => 40 + i + Random().nextDouble());
       addEEGData(mock);
     });
   }

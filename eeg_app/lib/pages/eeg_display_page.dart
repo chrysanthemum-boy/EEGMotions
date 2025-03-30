@@ -31,9 +31,6 @@ class _EEGDisplayPageState extends State<EEGDisplayPage> {
     });
   }
 
-
-
-
   @override
   void dispose() {
     _eegSub?.cancel();
@@ -58,7 +55,7 @@ class _EEGDisplayPageState extends State<EEGDisplayPage> {
             itemBuilder: (context, index) {
               final chData = history[index];
               // return Center(child: Text(eegdata.toString()));
-              return EEGChartWidget(channel: index + 1, data: List<int>.from(chData));
+              return EEGChartWidget(channel: index + 1, data: List<double>.from(chData));
             },
           );
         },
@@ -69,7 +66,7 @@ class _EEGDisplayPageState extends State<EEGDisplayPage> {
 
 class EEGChartWidget extends StatelessWidget {
   final int channel;
-  final List<int> data;
+  final List<double> data;
 
   const EEGChartWidget({super.key, required this.channel, required this.data});
 
@@ -96,7 +93,7 @@ class EEGChartWidget extends StatelessWidget {
 }
 
 class _LineChartPainter extends CustomPainter {
-  final List<int> data;
+  final List<double> data;
   final Color lineColor;
 
   _LineChartPainter(this.data, {this.lineColor = Colors.indigo});
@@ -115,8 +112,8 @@ class _LineChartPainter extends CustomPainter {
     final double dxStep = size.width / (data.length - 1);
 
     // 🧠 自动计算最大最小值，加上 padding 避免挤边缘
-    final int minVal = data.reduce((a, b) => a < b ? a : b);
-    final int maxVal = data.reduce((a, b) => a > b ? a : b);
+    final double minVal = data.reduce((a, b) => a < b ? a : b);
+    final double maxVal = data.reduce((a, b) => a > b ? a : b);
     final double range = (maxVal - minVal).toDouble();
     final double padding = range * 0.1; // 10% padding
 

@@ -55,7 +55,9 @@ class MonitorProvider extends ChangeNotifier {
 
   void addEEGSample(List<int> sample) {
     if (sample.length != channelCount) return;
-
+    print(
+        "Received sample: ${sample.map((e) => e.toString()).join(", ")}"
+    );
     for (int i = 0; i < channelCount; i++) {
       _buffers[i].add(sample[i].toDouble());
       if (_buffers[i].length > windowSize) {
@@ -64,13 +66,13 @@ class MonitorProvider extends ChangeNotifier {
     }
   }
 
-  void startListening() {
-    BluetoothService.eegDataStream.listen((data) {
-      if (data.length == channelCount) {
-        addEEGSample(data);
-      }
-    });
-  }
+  // void startListening() {
+  //   BluetoothService.eegDataStream.listen((data) {
+  //     if (data.length == channelCount) {
+  //       addEEGSample(data);
+  //     }
+  //   });
+  // }
 
   /// ✅ 新增：更新状态和概率（由 coremlResultStream 触发）
   void updatePrediction(String status, double probability) {

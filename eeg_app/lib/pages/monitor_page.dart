@@ -21,19 +21,23 @@ class _MonitorPageState extends State<MonitorPage> {
   @override
   void initState() {
     super.initState();
+    
 
     // 模拟推理（可替换为真实推理）
-    // _timer = Timer.periodic(const Duration(seconds: 2), (_) {
-    //   context.read<MonitorProvider>().simulatePrediction();
-    // });
+    _timer = Timer.periodic(const Duration(seconds: 2), (_) {
+      context.read<MonitorProvider>().simulatePrediction();
+    });
+    // context.read<MonitorProvider>().startListening();
     // 监听 CoreML 推理结果
     _coremlSub = CoreMLService.coremlResultStream.listen((event) {
       final provider = context.read<MonitorProvider>();
       final stress = event['stress'] ?? "Unknown";
       final prob = (event['probability'] ?? 0.0).toDouble();
-
+      print(
+          "🧠 Received CoreML result: stress=$stress, probability=${prob.toStringAsFixed(3)}"
+      );
       provider.updatePrediction(stress, prob);
-
+      
       if (provider.voiceEnabled && stress == "Stress") {
         _announce("Stress detected.");
       }
@@ -57,104 +61,125 @@ class _MonitorPageState extends State<MonitorPage> {
     super.dispose();
   }
   @override
+  @override
   Widget build(BuildContext context) {
     final provider = context.watch<MonitorProvider>();
-    final stressValue = provider.stressValue;
+    final relaxedValue = provider.status == "Relaxed" ? 0.0 : provider.stressValue;
+    final dynamicColor = Color.lerp(Colors.blueAccent, Colors.redAccent, relaxedValue)!;
+    final circleSize = 160.0 + relaxedValue * 80;
     final isStress = provider.status == "Stress";
 
-    final dynamicColor = Color.lerp(Colors.blueAccent, Colors.redAccent, stressValue)!;
-    final circleSize = 160.0 + stressValue * 40;
-
     return Scaffold(
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // 🌈 Stack 中对齐两个动画层：光圈 + 主圆
-              Stack(
-                alignment: Alignment.center,
-                children: [
-                  // ✅ ✨发散粒子层（最上面！可见）
-                  Positioned.fill(
-                    child: IgnorePointer( // 确保不影响交互
-                      child: _FlyingParticles(
-                        count: 60,
-                        color: const Color.fromARGB(179, 240, 2, 2),
-                        startRadius: circleSize / 2,
+      body: SafeArea(
+        child: Column(
+          children: [
+            /// 上半部分：圆圈动画（居中）
+            Expanded(
+              flex: 1,
+              child: Center(
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Positioned.fill(
+                      child: IgnorePointer(
+                        child: _FlyingParticles(
+                          count: 60,
+                          color: dynamicColor,
+                          startRadius: circleSize / 2,
+                        ),
                       ),
                     ),
-                  ),
-
-                  // 🌈 白色渐变扩散光圈
-                  AnimatedContainer(
-                    width: circleSize * 2,
-                    height: circleSize * 2,
-                    duration: const Duration(milliseconds: 600),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: RadialGradient(
-                        colors: [
-                          Colors.white.withOpacity(stressValue * 0.5),
-                          Colors.transparent,
+                    AnimatedContainer(
+                      width: circleSize * 2,
+                      height: circleSize * 2,
+                      duration: const Duration(milliseconds: 600),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: RadialGradient(
+                          colors: [
+                            Colors.white.withOpacity(relaxedValue * 0.5),
+                            Colors.transparent,
+                          ],
+                          stops: const [0.0, 1.0],
+                        ),
+                      ),
+                    ),
+                    AnimatedContainer(
+                      width: circleSize,
+                      height: circleSize,
+                      duration: const Duration(milliseconds: 600),
+                      decoration: BoxDecoration(
+                        color: dynamicColor,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: dynamicColor.withOpacity(0.6),
+                            blurRadius: 25,
+                            spreadRadius: 5,
+                          )
                         ],
-                        stops: const [0.0, 1.0],
+                      ),
+                      child: Center(
+                        child: Text(
+                          isStress ? "😖" : "😌",
+                          style: const TextStyle(fontSize: 64),
+                        ),
                       ),
                     ),
-                  ),
-                  // _FlyingParticles(color: dynamicColor.withOpacity(0.5), count: 20),
-                  // 🟠 中心圆圈（变色、变大）
-                  AnimatedContainer(
-                    width: circleSize,
-                    height: circleSize,
-                    duration: const Duration(milliseconds: 600),
-                    decoration: BoxDecoration(
-                      color: dynamicColor,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: dynamicColor.withOpacity(0.6),
-                          blurRadius: 25,
-                          spreadRadius: 5,
-                        )
-                      ],
-                    ),
-                    child: Center(
-                      child: Text(
-                        isStress ? "😖" : "😌",
-                        style: const TextStyle(fontSize: 64),
+                  ],
+                ),
+              ),
+            ),
+
+            /// 下半部分：文字 & 按钮（居中）
+            Expanded(
+              flex: 1,
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 32),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Text(
+                      //   "Please connect the EEG device to start monitoring.",
+                      //   style: TextStyle(
+                      //     fontSize: 28, 
+                      //     fontWeight: FontWeight.bold,
+                      //     color: Colors.black12),
+                      //   textAlign: TextAlign.center,
+                        
+                      // ),
+                      Text(
+                        "Current Status: ${provider.status}",
+                        style: TextStyle(
+                          fontSize: 28, 
+                          fontWeight: FontWeight.bold,
+                          color: dynamicColor),
+                        textAlign: TextAlign.center,
+                        
                       ),
-                    ),
+                      const SizedBox(height: 12),
+                      Text(
+                        "Stress Level: ${(relaxedValue * 100).toStringAsFixed(1)}%",
+                        style: const TextStyle(fontSize: 20, color: Colors.grey),
+                      ),
+                      const SizedBox(height: 24),
+                      ElevatedButton.icon(
+                        onPressed: _toggleVoice,
+                        icon: Icon(provider.voiceEnabled ? Icons.volume_off : Icons.volume_up),
+                        label: Text(provider.voiceEnabled
+                            ? "Disable Voice Alert"
+                            : "Enable Voice Alert"),
+                      ),
+                    ],
                   ),
-                  
-                ],
+                ),
               ),
-
-
-              const SizedBox(height: 32),
-              Text(
-                "Current Status: ${provider.status}",
-                style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 12),
-              Text(
-                "Stress Level: ${(stressValue * 100).toStringAsFixed(1)}%",
-                style: const TextStyle(fontSize: 20, color: Colors.grey),
-              ),
-              const SizedBox(height: 32),
-              ElevatedButton.icon(
-                onPressed: _toggleVoice,
-                icon: Icon(provider.voiceEnabled ? Icons.volume_off : Icons.volume_up),
-                label: Text(provider.voiceEnabled ? "Disable Voice Alert" : "Enable Voice Alert"),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
-
   }
 }
 

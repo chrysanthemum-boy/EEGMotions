@@ -1,52 +1,59 @@
-import CoreBluetooth
+import Foundation
 import CoreML
 
-// 全局缓存，用于收集 1000 条连续 EEG 数据帧（每帧 16 通道）
 var eegBuffer: [[Double]] = []
-
 var eegEventSink: FlutterEventSink?
 
-func handleEEGData(_ data: [UInt8]) {
-    guard data.count >= 48 else {
-        print("❌ 数据不足 48 字节")
-        return
+// 🕒 添加定时器
+var predictionTimer: Timer?
+
+class CoreMLStreamHandler: NSObject, FlutterStreamHandler {
+    func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink) -> FlutterError? {
+        eegEventSink = events
+        print("🧠 CoreML 事件监听开始")
+
+        // 🟢 开始每1秒推理一次
+        predictionTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+            if #available(iOS 15.0, *) {
+                predictEEG(buffer: eegBuffer)
+            }
+        }
+
+        return nil
     }
+
+    func onCancel(withArguments arguments: Any?) -> FlutterError? {
+        eegEventSink = nil
+        predictionTimer?.invalidate()
+        predictionTimer = nil
+        print("🧠 CoreML 事件监听取消")
+        return nil
+    }
+}
+
+func handleEEGData(_ data: [UInt8]) {
+    guard data.count >= 48 else { return }
 
     var frame: [Double] = []
 
-    // 解码 16 通道（每 3 字节一个 24-bit 补码数）
     for i in stride(from: 0, to: 48, by: 3) {
         let raw = (Int(data[i]) << 16) | (Int(data[i+1]) << 8) | Int(data[i+2])
-        let signed = raw >= 0x800000 ? raw - 0x1000000 : raw  // 补码还原
+        let signed = raw >= 0x800000 ? raw - 0x1000000 : raw
         frame.append(Double(signed))
     }
 
     eegBuffer.append(frame)
 
-    // 限制缓存大小：只保留最新 1000 帧
+    // 保持最多 1000 帧
     if eegBuffer.count > 1000 {
         eegBuffer.removeFirst()
-    }
-
-    // 推理条件：满 1000 帧
-    if eegBuffer.count == 1000 {
-        if #available(iOS 15.0, *) {
-            predictEEG(buffer: eegBuffer)
-        } else {
-            // Fallback on earlier versions
-        }
-
-        // 🔁 推理后可选择清空或滑动窗口
-        // eegBuffer.removeAll()           // 若按段推理
-        // eegBuffer.removeFirst(50)       // 若滑窗推理（滑动 50 帧）
     }
 }
 
 @available(iOS 15.0, *)
 func predictEEG(buffer: [[Double]]) {
-
-    guard buffer.count == 1000 && buffer[0].count == 16 else {
-        print("❌ EEG 输入格式不正确")
+    guard buffer.count == 1000 else {
+        print("⏳ 等待满 1000 帧，当前仅 \(buffer.count)")
         return
     }
 
@@ -56,8 +63,7 @@ func predictEEG(buffer: [[Double]]) {
 
         for i in 0..<1000 {
             for j in 0..<16 {
-                let index: [NSNumber] = [0, NSNumber(value: i), NSNumber(value: j)]
-                inputArray[index] = NSNumber(value: buffer[i][j])
+                inputArray[[0, NSNumber(value: i), NSNumber(value: j)]] = NSNumber(value: buffer[i][j])
             }
         }
 
@@ -69,29 +75,12 @@ func predictEEG(buffer: [[Double]]) {
 
         print("🧠 推理结果：\(label) (\(probability))")
 
-        // ✅ 推送到 Flutter（需要封装 JSON 结构）
         eegEventSink?([
             "data": buffer.last ?? [],
             "stress": label,
             "probability": probability
         ])
-
-
     } catch {
-        print("❌ CoreML 推理失败：\(error.localizedDescription)")
-    }
-}
-
-class CoreMLStreamHandler: NSObject, FlutterStreamHandler {
-    func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink) -> FlutterError? {
-        eegEventSink = events // 👈 设置全局用于推理结果输出
-        print("🧠 CoreML 事件监听开始")
-        return nil
-    }
-
-    func onCancel(withArguments arguments: Any?) -> FlutterError? {
-        eegEventSink = nil
-        print("🧠 CoreML 事件监听取消")
-        return nil
+        print("❌ 推理失败：\(error.localizedDescription)")
     }
 }

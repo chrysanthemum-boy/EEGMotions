@@ -148,18 +148,17 @@ class BluetoothManager: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate
     }
 
     let rawBytes = [UInt8](value)
-    print("📥 收到原始 EEG 数据: \(rawBytes)")
+    // print("📥 收到原始 EEG 数据: \(rawBytes)")
+    handleEEGData(rawBytes)
+    var decoded: [Double] = []
 
-    var decoded: [Int] = []
-
-    // 解码为 signed 24-bit int
+    // 解码为 signed 24-bit double
     for i in stride(from: 0, to: min(rawBytes.count, 48), by: 3) {
         let raw = (Int(rawBytes[i]) << 16) | (Int(rawBytes[i + 1]) << 8) | Int(rawBytes[i + 2])
         let signed = raw >= 0x800000 ? raw - 0x1000000 : raw
-        decoded.append(signed)
+        decoded.append(Double(signed))
     }
-
-    print("✅ 解码 EEG 数据: \(decoded)")
+    
     eegEventSink?(decoded) // 直接发送 Int 数组到 Flutter
 }
 
