@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../service/bluetooth_service.dart';
-import '../provider/bluetooth_provider.dart';
+import '../../service/bluetooth_service.dart';
+import '../../provider/bluetooth_provider.dart';
 
 class BluetoothConnectPage extends StatefulWidget {
   const BluetoothConnectPage({super.key});
@@ -82,8 +82,16 @@ class _BluetoothConnectPageState extends State<BluetoothConnectPage> {
   @override
   Widget build(BuildContext context) {
     final bluetooth = context.watch<BluetoothProvider>();
+    
 
     return Scaffold(
+      appBar: AppBar(
+        title: const Text("📡 Bluetooth Connect"),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context), // 👈 返回设置页
+        ),
+      ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -92,7 +100,7 @@ class _BluetoothConnectPageState extends State<BluetoothConnectPage> {
             child: Text(
               bluetooth.isScanning
                   ? "Status: Scanning..."
-                  : "Status: ${bluetooth.connectedDeviceId != null ? 'Connected to ${bluetooth.connectedDeviceId}' : 'Disconnected'}",
+                  : "Status: ${bluetooth.connectedDeviceId != null ? 'Connected to ${bluetooth.connectedDeviceName}' : 'Disconnected'}",
               style: const TextStyle(fontSize: 16),
             ),
           ),

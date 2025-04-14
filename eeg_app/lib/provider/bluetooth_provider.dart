@@ -16,6 +16,11 @@ class BluetoothProvider extends ChangeNotifier {
   List<BluetoothDevice> get devices => _devices;
   bool get isScanning => _scanning;
   String? get connectedDeviceId => _connectedDeviceId;
+  String? get connectedDeviceName {
+    if (_connectedDeviceId == null) return null;
+    final device = _devices.firstWhere((d) => d.id == _connectedDeviceId);
+    return device.name;
+  }
   List<String> get logs => _logs;
 
   void startScan() {

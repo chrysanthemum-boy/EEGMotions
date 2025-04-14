@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'pages/monitor_page.dart';
 // import 'pages/test_page.dart';
-import 'pages/bluetooth_connect_page.dart';
+import 'pages/settings/bluetooth_connect_page.dart';
 import 'pages/eeg_display_page.dart';
 import 'provider/eeg_provider.dart';
 import 'provider/bluetooth_provider.dart';
 import 'provider/monitor_provider.dart';
+import 'pages/setting_page.dart';
+import 'provider/robotdog_provider.dart';
 
 void main() {
   runApp(
@@ -15,6 +17,7 @@ void main() {
         ChangeNotifierProvider(create: (_) => EEGProvider()),
         ChangeNotifierProvider(create: (_) => BluetoothProvider()),
         ChangeNotifierProvider(create: (_) => MonitorProvider()),
+        ChangeNotifierProvider(create: (_) => RobotDogProvider()),
       ],
       child: const MyApp(),
     ),
@@ -57,14 +60,16 @@ class _HomeScreenState extends State<HomeScreen> {
     // TestPage(),
     MonitorPage(),
     EEGDisplayPage(),
-    BluetoothConnectPage(),
+    // BluetoothConnectPage(),
+    SettingsPage(),
   ];
 
   final _titles = [
     // "🧪 Single Test",
     "🧠 Real-time Monitor",
     "📈 EEG Chart",
-    "📡 Bluetooth Connect",
+    // "📡 Bluetooth Connect",
+    "⚙️ Settings",
   ];
 
   @override
@@ -89,8 +94,8 @@ class _HomeScreenState extends State<HomeScreen> {
             label: "Display",
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.bluetooth),
-            label: "Connect",
+            icon: Icon(Icons.settings),
+            label: "Settings",
           ),
         ],
       ),
