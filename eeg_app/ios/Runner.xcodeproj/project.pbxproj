@@ -16,8 +16,9 @@
 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
 		B75A92C62D936F4C00ECF2CC /* EEGNet.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = B75A92C52D936F4C00ECF2CC /* EEGNet.mlpackage */; };
 		B75A92CC2D945B5A00ECF2CC /* BluetoothManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B75A92CB2D945B5A00ECF2CC /* BluetoothManager.swift */; };
-		B75A92CE2D945D4600ECF2CC /* PredictEEG.swift in Sources */ = {isa = PBXBuildFile; fileRef = B75A92CD2D945D4600ECF2CC /* PredictEEG.swift */; };
 		B7BB6BA82DAD3E9F00735502 /* cnn_bilstm.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = B7BB6BA72DAD3E9F00735502 /* cnn_bilstm.mlpackage */; };
+		B7BB6BAA2DAE7B6800735502 /* CoreMLStreamHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7BB6BA92DAE7B6800735502 /* CoreMLStreamHandler.swift */; };
+		B7BB6BAC2DAE828800735502 /* eeg_model.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = B7BB6BAB2DAE828800735502 /* eeg_model.mlpackage */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -63,8 +64,9 @@
 		B75A92C92D937BE700ECF2CC /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/Main.strings"; sourceTree = "<group>"; };
 		B75A92CA2D937BE700ECF2CC /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/LaunchScreen.strings"; sourceTree = "<group>"; };
 		B75A92CB2D945B5A00ECF2CC /* BluetoothManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BluetoothManager.swift; sourceTree = "<group>"; };
-		B75A92CD2D945D4600ECF2CC /* PredictEEG.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PredictEEG.swift; sourceTree = "<group>"; };
 		B7BB6BA72DAD3E9F00735502 /* cnn_bilstm.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = cnn_bilstm.mlpackage; sourceTree = "<group>"; };
+		B7BB6BA92DAE7B6800735502 /* CoreMLStreamHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreMLStreamHandler.swift; sourceTree = "<group>"; };
+		B7BB6BAB2DAE828800735502 /* eeg_model.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = eeg_model.mlpackage; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -119,8 +121,9 @@
 		97C146F01CF9000F007C117D /* Runner */ = {
 			isa = PBXGroup;
 			children = (
+				B7BB6BAB2DAE828800735502 /* eeg_model.mlpackage */,
+				B7BB6BA92DAE7B6800735502 /* CoreMLStreamHandler.swift */,
 				B7BB6BA72DAD3E9F00735502 /* cnn_bilstm.mlpackage */,
-				B75A92CD2D945D4600ECF2CC /* PredictEEG.swift */,
 				B75A92CB2D945B5A00ECF2CC /* BluetoothManager.swift */,
 				B75A92C52D936F4C00ECF2CC /* EEGNet.mlpackage */,
 				97C146FA1CF9000F007C117D /* Main.storyboard */,
@@ -285,9 +288,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				B7BB6BA82DAD3E9F00735502 /* cnn_bilstm.mlpackage in Sources */,
+				B7BB6BAC2DAE828800735502 /* eeg_model.mlpackage in Sources */,
 				74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */,
 				B75A92C62D936F4C00ECF2CC /* EEGNet.mlpackage in Sources */,
-				B75A92CE2D945D4600ECF2CC /* PredictEEG.swift in Sources */,
+				B7BB6BAA2DAE7B6800735502 /* CoreMLStreamHandler.swift in Sources */,
 				B75A92CC2D945B5A00ECF2CC /* BluetoothManager.swift in Sources */,
 				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,
 			);

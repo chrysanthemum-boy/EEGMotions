@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'pages/monitor_page.dart';
 // import 'pages/test_page.dart';
-import 'pages/settings/bluetooth_connect_page.dart';
+// import 'pages/settings/bluetooth_connect_page.dart';
 import 'pages/eeg_display_page.dart';
 import 'provider/eeg_provider.dart';
 import 'provider/bluetooth_provider.dart';
@@ -57,47 +57,44 @@ class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
 
   final _pages = [
-    // TestPage(),
     MonitorPage(),
     EEGDisplayPage(),
-    // BluetoothConnectPage(),
     SettingsPage(),
-  ];
-
-  final _titles = [
-    // "🧪 Single Test",
-    "🧠 Real-time Monitor",
-    "📈 EEG Chart",
-    // "📡 Bluetooth Connect",
-    "⚙️ Settings",
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(_titles[_selectedIndex])),
       body: _pages[_selectedIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: (i) => setState(() => _selectedIndex = i),
-        items: const [
-          // BottomNavigationBarItem(
-          //   icon: Icon(Icons.flash_on),
-          //   label: "Test",
-          // ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.monitor_heart),
-            label: "Monitor",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.data_usage),
-            label: "Display",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: "Settings",
-          ),
-        ],
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.2),
+              spreadRadius: 1,
+              blurRadius: 5,
+              offset: const Offset(0, -1),
+            ),
+          ],
+        ),
+        child: BottomNavigationBar(
+          currentIndex: _selectedIndex,
+          onTap: (i) => setState(() => _selectedIndex = i),
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.monitor_heart),
+              label: "Monitor",
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.data_usage),
+              label: "Display",
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.settings),
+              label: "Settings",
+            ),
+          ],
+        ),
       ),
     );
   }

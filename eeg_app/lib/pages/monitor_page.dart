@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../provider/monitor_provider.dart';
 import '../provider/eeg_provider.dart';
 import '../service/coreml_service.dart';
+import 'settings/bluetooth_connect_page.dart';
 
 class MonitorPage extends StatefulWidget {
   const MonitorPage({super.key});
@@ -16,17 +17,55 @@ class MonitorPage extends StatefulWidget {
 
 class _MonitorPageState extends State<MonitorPage> {
   StreamSubscription? _coremlSub;
+  StreamSubscription? _connectionSub;
   late Timer _timer;
   static const MethodChannel _voiceChannel = MethodChannel('accessibility_channel');
+  static const EventChannel _connectionChannel = EventChannel('connection_status');
 
   @override
   void initState() {
     super.initState();
     
-
-    // 模拟推理（可替换为真实推理）
-    _timer = Timer.periodic(const Duration(seconds: 2), (_) {
-      context.read<MonitorProvider>().simulatePrediction();
+    // 初始化 CoreML 服务
+    CoreMLService.initialize();
+    CoreMLService.setupEventChannel();
+    
+    // 监听连接状态
+    _connectionSub = _connectionChannel.receiveBroadcastStream().listen((event) {
+      if (event is Map) {
+        final connected = event['connected'] as bool;
+        final deviceName = event['device_name'] as String;
+        
+        if (connected) {
+          // 连接成功，更新状态并开始预测
+          context.read<EEGProvider>().setConnected(true);
+          context.read<MonitorProvider>().setDeviceName(deviceName);
+          CoreMLService.startPrediction();
+          
+          // 显示连接成功提示
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('已连接到 $deviceName'),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        } else {
+          // 断开连接，更新状态并停止预测
+          context.read<EEGProvider>().setConnected(false);
+          context.read<MonitorProvider>().setDeviceName(null);
+          CoreMLService.stopPrediction();
+          
+          // 显示断开连接提示
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('设备已断开连接'),
+              backgroundColor: Colors.red,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      }
     });
 
     // 监听 CoreML 推理结果
@@ -57,7 +96,8 @@ class _MonitorPageState extends State<MonitorPage> {
   @override
   void dispose() {
     _coremlSub?.cancel();
-    _timer.cancel();
+    _connectionSub?.cancel();
+    CoreMLService.dispose();
     super.dispose();
   }
 
@@ -70,7 +110,7 @@ class _MonitorPageState extends State<MonitorPage> {
     final circleSize = 160.0 + relaxedValue * 80;
     final isStress = provider.status == "Stress";
     final history = eeg.history;
-    final isConnected = history.isNotEmpty && history.any((ch) => ch.isNotEmpty);
+    final isConnected = eeg.isConnected;
     var hasAnnounced = false;
 
     return Scaffold(
@@ -87,7 +127,7 @@ class _MonitorPageState extends State<MonitorPage> {
                     Positioned.fill(
                       child: IgnorePointer(
                         child: _FlyingParticles(
-                          count: 60,
+                          count: 40,
                           color: dynamicColor,
                           startRadius: circleSize / 2,
                         ),
@@ -96,12 +136,13 @@ class _MonitorPageState extends State<MonitorPage> {
                     AnimatedContainer(
                       width: circleSize * 2,
                       height: circleSize * 2,
-                      duration: const Duration(milliseconds: 600),
+                      duration: const Duration(milliseconds: 400),
+                      curve: Curves.easeInOut,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         gradient: RadialGradient(
                           colors: [
-                            Colors.white.withOpacity(relaxedValue * 0.5),
+                            Colors.white.withOpacity(relaxedValue * 0.4),
                             Colors.transparent,
                           ],
                           stops: const [0.0, 1.0],
@@ -111,15 +152,16 @@ class _MonitorPageState extends State<MonitorPage> {
                     AnimatedContainer(
                       width: circleSize,
                       height: circleSize,
-                      duration: const Duration(milliseconds: 600),
+                      duration: const Duration(milliseconds: 400),
+                      curve: Curves.easeInOut,
                       decoration: BoxDecoration(
                         color: dynamicColor,
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: dynamicColor.withOpacity(0.6),
-                            blurRadius: 25,
-                            spreadRadius: 5,
+                            color: dynamicColor.withOpacity(0.5),
+                            blurRadius: 20,
+                            spreadRadius: 4,
                           )
                         ],
                       ),
@@ -155,8 +197,32 @@ class _MonitorPageState extends State<MonitorPage> {
                           ),
                           textAlign: TextAlign.center,
                         ),
+                        const SizedBox(height: 24),
+                        // 👇 蓝牙连接按钮
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const BluetoothConnectPage(),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.bluetooth, color: Colors.white),
+                          label: const Text("Connect Device"),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 32,
+                              vertical: 16,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                          ),
+                        ),
                         const SizedBox(height: 16),
-
                         // 👇 自动语音播报（只播报一次）
                         Builder(builder: (_) {
                           if (!hasAnnounced) {
@@ -168,6 +234,23 @@ class _MonitorPageState extends State<MonitorPage> {
                           return const SizedBox.shrink();
                         }),
                       ] else ...[
+                        // 👇 已连接状态显示
+                        Text(
+                          "Connected to:",
+                          style: TextStyle(
+                            fontSize: 20,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                        Text(
+                          provider.deviceName ?? "Unknown Device",
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blue,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
                         Text(
                           "Current Status: ",
                           style: TextStyle(
@@ -175,7 +258,6 @@ class _MonitorPageState extends State<MonitorPage> {
                             fontWeight: FontWeight.bold,
                             color: Colors.grey),
                           textAlign: TextAlign.center,
-                          
                         ),
                         Text(
                           provider.status,
@@ -228,8 +310,9 @@ class _FlyingParticles extends StatefulWidget {
 
 class _FlyingParticlesState extends State<_FlyingParticles> with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
-  late final List<_Particle> _particles;
+  late List<_Particle> _particles;
   final Random _random = Random();
+  double _lastProgress = 0.0;
 
   @override
   void initState() {
@@ -238,21 +321,31 @@ class _FlyingParticlesState extends State<_FlyingParticles> with SingleTickerPro
 
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 2),
+      duration: const Duration(milliseconds: 1500),
     )..repeat();
+  }
+
+  @override
+  void didUpdateWidget(_FlyingParticles oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.startRadius != widget.startRadius) {
+      _particles = List.generate(widget.count, (_) => _generateParticle());
+    }
   }
 
   _Particle _generateParticle() {
     final angle = _random.nextDouble() * 2 * pi;
-    final speed = 30 + _random.nextDouble() * 40;
-    final radius = widget.startRadius; // 从圆圈外圈开始
-    final life = 0.5 + _random.nextDouble() * 0.5;
+    final speed = 20 + _random.nextDouble() * 30;
+    final radius = widget.startRadius;
+    final life = 0.3 + _random.nextDouble() * 0.3;
+    final startTime = _random.nextDouble() * life; // 随机开始时间
 
     return _Particle(
       angle: angle,
       speed: speed,
       radius: radius,
       life: life,
+      startTime: startTime,
     );
   }
 
@@ -268,10 +361,21 @@ class _FlyingParticlesState extends State<_FlyingParticles> with SingleTickerPro
       child: AnimatedBuilder(
         animation: _controller,
         builder: (_, __) {
+          final currentProgress = _controller.value;
+          if (currentProgress < _lastProgress) {
+            // 当动画循环时，更新粒子的开始时间
+            for (var i = 0; i < _particles.length; i++) {
+              if (_particles[i].startTime > currentProgress) {
+                _particles[i] = _generateParticle();
+              }
+            }
+          }
+          _lastProgress = currentProgress;
+
           return CustomPaint(
             painter: _RadialParticlePainter(
               particles: _particles,
-              progress: _controller.value,
+              progress: currentProgress,
               color: widget.color,
             ),
             size: Size.infinite,
@@ -287,12 +391,14 @@ class _Particle {
   final double speed;
   final double radius;
   final double life;
+  final double startTime;
 
   _Particle({
     required this.angle,
     required this.speed,
     required this.radius,
     required this.life,
+    required this.startTime,
   });
 }
 
@@ -310,21 +416,28 @@ class _RadialParticlePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final center = size.center(Offset.zero);
-    final paint = Paint()..style = PaintingStyle.fill;
+    final paint = Paint()
+      ..style = PaintingStyle.fill
+      ..isAntiAlias = true;
 
     for (var p in particles) {
-      final t = (progress / p.life) % 1.0;
+      final t = ((progress - p.startTime) / p.life) % 1.0;
+      if (t < 0) continue; // 跳过还未开始的粒子
+      
       final distance = p.radius + p.speed * t;
       final dx = cos(p.angle) * distance;
       final dy = sin(p.angle) * distance;
       final opacity = (1.0 - t).clamp(0.0, 1.0);
 
-      paint.color = color.withOpacity(opacity);
-      canvas.drawCircle(center + Offset(dx, dy), 2.5, paint);
+      paint.color = color.withOpacity(opacity * 0.7);
+      canvas.drawCircle(center + Offset(dx, dy), 2.0, paint);
     }
   }
 
   @override
-  bool shouldRepaint(CustomPainter oldDelegate) => true;
+  bool shouldRepaint(_RadialParticlePainter oldDelegate) {
+    return oldDelegate.progress != progress || 
+           oldDelegate.color != color;
+  }
 }
 

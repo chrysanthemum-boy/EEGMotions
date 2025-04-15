@@ -5,56 +5,69 @@ import CoreBluetooth
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {
-  var bluetoothManager: BluetoothManager?  // 👈 拿到全局作用域
+  var bluetoothManager: BluetoothManager?
+  var coreMLModel: MLModel?
 
   override func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    GeneratedPluginRegistrant.register(with: self)
-
-    guard let controller = window?.rootViewController as? FlutterViewController else {
-      fatalError("❌ FlutterViewController not found")
-    }
-
-    // 注册 CoreML 通道
-    registerCoreMLChannel(with: controller.binaryMessenger)
-
+    let controller : FlutterViewController = window?.rootViewController as! FlutterViewController
+    
+    // CoreML Method Channel
+    let coremlChannel = FlutterMethodChannel(name: "coreml_channel", binaryMessenger: controller.binaryMessenger)
+    coremlChannel.setMethodCallHandler({
+      [weak self] (call: FlutterMethodCall, result: @escaping FlutterResult) -> Void in
+      guard let self = self else { return }
+      
+      switch call.method {
+      case "initializeCoreML":
+        self.initializeCoreML(result: result)
+      case "startPrediction":
+        self.startPrediction(result: result)
+      case "stopPrediction":
+        self.stopPrediction(result: result)
+      default:
+        result(FlutterMethodNotImplemented)
+      }
+    })
+    
+    // CoreML Event Channel
+    let coremlEventChannel = FlutterEventChannel(name: "coreml_events", binaryMessenger: controller.binaryMessenger)
+    coremlEventChannel.setStreamHandler(CoreMLStreamHandler())
+    
     // 注册 Bluetooth 通道
     registerBluetoothChannel(with: controller.binaryMessenger)
 
     // 注册语音播报通道
     registerAccessibilityChannel(with: controller.binaryMessenger)
 
+    GeneratedPluginRegistrant.register(with: self)
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 
-  // 📦 注册 CoreML 推理方法通道
-  // private func registerCoreMLChannel(with messenger: FlutterBinaryMessenger) {
-  //   let channel = FlutterMethodChannel(name: "coreml_predictor", binaryMessenger: messenger)
-  //   channel.setMethodCallHandler { (call: FlutterMethodCall, result: @escaping FlutterResult) in
-  //     if call.method == "predict" {
-  //       guard let args = call.arguments as? [String: Any],
-  //             let input = args["input"] as? [Double] else {
-  //         result(FlutterError(code: "INVALID_INPUT", message: "Expected input as [Double]", details: nil))
-  //         return
-  //       }
-
-  //       if let prediction = predictEEG(inputData: input) {
-  //         result(prediction)
-  //       } else {
-  //         result(FlutterError(code: "PREDICT_FAIL", message: "Prediction failed", details: nil))
-  //       }
-  //     } else {
-  //       result(FlutterMethodNotImplemented)
-  //     }
-  //   }
-  // }
-  private func registerCoreMLChannel(with messenger: FlutterBinaryMessenger) {
-    let eventChannel = FlutterEventChannel(name: "coreml_predictor", binaryMessenger: messenger)
-    eventChannel.setStreamHandler(CoreMLStreamHandler())
+  private func initializeCoreML(result: @escaping FlutterResult) {
+    do {
+      // 使用 MLModel 而不是具体的模型类
+      let modelURL = Bundle.main.url(forResource: "eeg_model", withExtension: "mlmodelc")!
+      coreMLModel = try MLModel(contentsOf: modelURL)
+      print("✅ CoreML 模型初始化成功")
+      result(true)
+    } catch {
+      print("❌ CoreML 模型初始化失败: \(error.localizedDescription)")
+      result(FlutterError(code: "INIT_FAILED", message: error.localizedDescription, details: nil))
+    }
   }
 
+  private func startPrediction(result: @escaping FlutterResult) {
+    print("▶️ 开始 EEG 预测")
+    result(true)
+  }
+
+  private func stopPrediction(result: @escaping FlutterResult) {
+    print("⏹ 停止 EEG 预测")
+    result(true)
+  }
 
   // 📡 注册蓝牙通道
   private func registerBluetoothChannel(with messenger: FlutterBinaryMessenger) {
@@ -101,7 +114,6 @@ import CoreBluetooth
       }
     }
   }
-
 }
 
 
