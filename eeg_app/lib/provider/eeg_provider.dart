@@ -24,7 +24,7 @@ class EEGProvider extends ChangeNotifier {
       return;
     }
     
-    print("📊 收到EEG数据: ${data.map((e) => e.toStringAsFixed(2)).join(", ")}");
+    // print("📊 收到EEG数据: ${data.map((e) => e.toStringAsFixed(2)).join(", ")}");
     
     for (int i = 0; i < channelCount; i++) {
       _history[i].add(data[i]);

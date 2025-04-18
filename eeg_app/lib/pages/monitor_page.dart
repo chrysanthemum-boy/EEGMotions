@@ -21,76 +21,69 @@ class _MonitorPageState extends State<MonitorPage> {
   late Timer _timer;
   static const MethodChannel _voiceChannel = MethodChannel('accessibility_channel');
   static const EventChannel _connectionChannel = EventChannel('connection_status');
+  bool _isInitialized = false;
+  bool _hasAnnounced = false;
 
   @override
   void initState() {
     super.initState();
+    _initState();
+  }
+
+  Future<void> _initState() async {
+    if (!mounted || _isInitialized) return;
     
-    // 初始化 CoreML 服务
-    CoreMLService.initialize();
-    CoreMLService.setupEventChannel();
-    
-    // 监听连接状态
-    _connectionSub = _connectionChannel.receiveBroadcastStream().listen((event) {
-      if (event is Map) {
-        final connected = event['connected'] as bool;
-        final deviceName = event['device_name'] as String;
+    final monitorProvider = Provider.of<MonitorProvider>(context, listen: false);
+    if (!monitorProvider.isLoading) {
+      monitorProvider.setLoading(true);
+      
+      try {
+        // 初始化 CoreML 服务
+        await CoreMLService.initialize();
+        CoreMLService.setupEventChannel();
         
-        if (connected) {
-          // 连接成功，更新状态并开始预测
-          context.read<EEGProvider>().setConnected(true);
-          context.read<MonitorProvider>().setDeviceName(deviceName);
-          CoreMLService.startPrediction();
-          
-          // 显示连接成功提示
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('已连接到 $deviceName'),
-              backgroundColor: Colors.green,
-              duration: const Duration(seconds: 2),
-            ),
-          );
-        } else {
-          // 断开连接，更新状态并停止预测
-          context.read<EEGProvider>().setConnected(false);
-          context.read<MonitorProvider>().setDeviceName(null);
-          CoreMLService.stopPrediction();
-          
-          // 显示断开连接提示
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('设备已断开连接'),
-              backgroundColor: Colors.red,
-              duration: Duration(seconds: 2),
-            ),
-          );
+        // 监听连接状态
+        _connectionSub = _connectionChannel.receiveBroadcastStream().listen((event) {
+          if (!mounted) return;
+          if (event is Map) {
+            final connected = event['connected'] as bool;
+            final deviceName = event['device_name'] as String;
+            
+            if (connected) {
+              context.read<EEGProvider>().setConnected(true);
+              context.read<MonitorProvider>().setDeviceName(deviceName);
+              CoreMLService.startPrediction();
+              _hasAnnounced = false; // 重置语音播报状态
+            } else {
+              context.read<EEGProvider>().setConnected(false);
+              context.read<MonitorProvider>().setDeviceName(null);
+              CoreMLService.stopPrediction();
+              _hasAnnounced = false; // 重置语音播报状态
+            }
+          }
+        });
+
+        // 监听 CoreML 推理结果
+        _coremlSub = CoreMLService.coremlResultStream.listen((event) {
+          if (!mounted) return;
+          final provider = context.read<MonitorProvider>();
+          final stress = event['stress'] ?? "Unknown";
+          final prob = (event['probability'] ?? 0.0).toDouble();
+          provider.updatePrediction(stress, prob);
+          if (provider.voiceEnabled && stress == "Stress") {
+            _announce("Stress detected.");
+          }
+        });
+
+        _isInitialized = true;
+      } catch (e) {
+        debugPrint("❌ 初始化失败: $e");
+      } finally {
+        if (mounted) {
+          monitorProvider.setLoading(false);
         }
       }
-    });
-
-    // 监听 CoreML 推理结果
-    _coremlSub = CoreMLService.coremlResultStream.listen((event) {
-      final provider = context.read<MonitorProvider>();
-      final stress = event['stress'] ?? "Unknown";
-      final prob = (event['probability'] ?? 0.0).toDouble();
-      print(
-          "🧠 Received CoreML result: stress=$stress, probability=${prob.toStringAsFixed(3)}"
-      );
-      provider.updatePrediction(stress, prob);
-      if (provider.voiceEnabled && stress == "Stress") {
-        _announce("Stress detected.");
-      }
-    });
-  }
-
-  void _announce(String message) {
-    _voiceChannel.invokeMethod("speak", {"message": message});
-  }
-
-  void _toggleVoice() {
-    final provider = context.read<MonitorProvider>();
-    provider.toggleVoice();
-    _announce(provider.voiceEnabled ? "Voice alert enabled" : "Voice alert disabled");
+    }
   }
 
   @override
@@ -98,7 +91,17 @@ class _MonitorPageState extends State<MonitorPage> {
     _coremlSub?.cancel();
     _connectionSub?.cancel();
     CoreMLService.dispose();
+    _isInitialized = false;
+    _hasAnnounced = false;
     super.dispose();
+  }
+
+  void _initAnimationControllers() {
+    // Implementation of _initAnimationControllers method
+  }
+
+  void _initVoice() {
+    // Implementation of _initVoice method
   }
 
   @override
@@ -111,7 +114,6 @@ class _MonitorPageState extends State<MonitorPage> {
     final isStress = provider.status == "Stress";
     final history = eeg.history;
     final isConnected = eeg.isConnected;
-    var hasAnnounced = false;
 
     return Scaffold(
       body: SafeArea(
@@ -223,16 +225,14 @@ class _MonitorPageState extends State<MonitorPage> {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        // 👇 自动语音播报（只播报一次）
-                        Builder(builder: (_) {
-                          if (!hasAnnounced) {
+                        if (!_hasAnnounced) ...[
+                          Builder(builder: (_) {
                             Future.delayed(Duration.zero, () {
                               _announce("Please connect the EEG device to start monitoring.");
-                              hasAnnounced = true;
                             });
-                          }
-                          return const SizedBox.shrink();
-                        }),
+                            return const SizedBox.shrink();
+                          }),
+                        ],
                       ] else ...[
                         // 👇 已连接状态显示
                         Text(
@@ -290,6 +290,19 @@ class _MonitorPageState extends State<MonitorPage> {
         ),
       ),
     );
+  }
+
+  void _announce(String message) {
+    if (!_hasAnnounced) {
+      _voiceChannel.invokeMethod("speak", {"message": message});
+      _hasAnnounced = true;
+    }
+  }
+
+  void _toggleVoice() {
+    final provider = context.read<MonitorProvider>();
+    provider.toggleVoice();
+    _announce(provider.voiceEnabled ? "Voice alert enabled" : "Voice alert disabled");
   }
 }
 

@@ -8,16 +8,20 @@ class MonitorProvider extends ChangeNotifier {
   double _stressValue = 0.0;
   bool _voiceEnabled = false;
   String? _deviceName;
+  bool _isLoading = false;
 
   String get status => _status;
   double get stressValue => _stressValue;
   bool get voiceEnabled => _voiceEnabled;
   String? get deviceName => _deviceName;
+  bool get isLoading => _isLoading;
 
   void updatePrediction(String status, double stressValue) {
-    _status = status;
-    _stressValue = stressValue;
-    notifyListeners();
+    if (_status != status || _stressValue != stressValue) {
+      _status = status;
+      _stressValue = stressValue;
+      notifyListeners();
+    }
   }
 
   void toggleVoice() {
@@ -26,8 +30,17 @@ class MonitorProvider extends ChangeNotifier {
   }
 
   void setDeviceName(String? name) {
-    _deviceName = name;
-    notifyListeners();
+    if (_deviceName != name) {
+      _deviceName = name;
+      notifyListeners();
+    }
+  }
+
+  void setLoading(bool loading) {
+    if (_isLoading != loading) {
+      _isLoading = loading;
+      notifyListeners();
+    }
   }
 
   static const int windowSize = 1000;
@@ -36,10 +49,11 @@ class MonitorProvider extends ChangeNotifier {
   final List<Queue<double>> _buffers = List.generate(channelCount, (_) => Queue<double>());
 
   void addEEGSample(List<int> sample) {
-    if (sample.length != channelCount) return;
-    print(
-        "Received sample: ${sample.map((e) => e.toString()).join(", ")}"
-    );
+    if (sample.length != channelCount) {
+      debugPrint("❌ EEG sample length mismatch: expected $channelCount, got ${sample.length}");
+      return;
+    }
+    
     for (int i = 0; i < channelCount; i++) {
       _buffers[i].add(sample[i].toDouble());
       if (_buffers[i].length > windowSize) {
@@ -51,11 +65,13 @@ class MonitorProvider extends ChangeNotifier {
   void reset() {
     _status = "Loading...";
     _stressValue = 0.0;
+    _isLoading = true;
     notifyListeners();
   }
 
   @override
   void dispose() {
+    _buffers.clear();
     super.dispose();
   }
 }

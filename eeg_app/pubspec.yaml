@@ -23,6 +23,7 @@ dependencies:
   intl: any
 
   flutter_launcher_icons: ^0.13.1
+  http: ^1.1.0
   # flutter_secure_storage: ^9.2.4
   # shared_preferences: any
 

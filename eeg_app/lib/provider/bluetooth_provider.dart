@@ -38,7 +38,12 @@ class BluetoothProvider extends ChangeNotifier {
     if (name == "unknown" || name == "(no name)" || name.isEmpty) return;
     final exists = _devices.any((d) => d.id == id);
     if (!exists) {
-      _devices.add(BluetoothDevice(id: id, name: name));
+      final device = BluetoothDevice(id: id, name: name);
+      if (name.toLowerCase().contains("eegpi")) {
+        _devices.insert(0, device);
+      } else {
+        _devices.add(device);
+      }
       notifyListeners();
     }
   }

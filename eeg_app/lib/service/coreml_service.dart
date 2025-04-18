@@ -14,8 +14,8 @@ class CoreMLService {
 
   static Future<void> initialize() async {
     try {
-      await platform.invokeMethod('initializeCoreML');
-      print("✅ CoreML 初始化成功");
+      // 模型已经在应用启动时加载，这里只需要返回成功
+      print("✅ CoreML 已就绪");
     } catch (e) {
       print("❌ CoreML 初始化失败: $e");
     }

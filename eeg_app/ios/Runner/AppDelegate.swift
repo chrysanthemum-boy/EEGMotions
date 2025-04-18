@@ -14,6 +14,15 @@ import CoreBluetooth
   ) -> Bool {
     let controller : FlutterViewController = window?.rootViewController as! FlutterViewController
     
+    // 在应用启动时自动加载 CoreML 模型
+    do {
+      let modelURL = Bundle.main.url(forResource: "eeg_model", withExtension: "mlmodelc")!
+      coreMLModel = try MLModel(contentsOf: modelURL)
+      print("✅ CoreML 模型初始化成功")
+    } catch {
+      print("❌ CoreML 模型初始化失败: \(error.localizedDescription)")
+    }
+    
     // CoreML Method Channel
     let coremlChannel = FlutterMethodChannel(name: "coreml_channel", binaryMessenger: controller.binaryMessenger)
     coremlChannel.setMethodCallHandler({
@@ -22,7 +31,8 @@ import CoreBluetooth
       
       switch call.method {
       case "initializeCoreML":
-        self.initializeCoreML(result: result)
+        // 模型已经在启动时加载，直接返回成功
+        result(true)
       case "startPrediction":
         self.startPrediction(result: result)
       case "stopPrediction":
@@ -41,6 +51,10 @@ import CoreBluetooth
 
     // 注册语音播报通道
     registerAccessibilityChannel(with: controller.binaryMessenger)
+
+    // 注册连接状态通道
+    let connectionChannel = FlutterEventChannel(name: "connection_status", binaryMessenger: controller.binaryMessenger)
+    connectionChannel.setStreamHandler(ConnectionStreamHandler())
 
     GeneratedPluginRegistrant.register(with: self)
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
@@ -113,6 +127,28 @@ import CoreBluetooth
         result(FlutterMethodNotImplemented)
       }
     }
+  }
+}
+
+// 连接状态流处理器
+class ConnectionStreamHandler: NSObject, FlutterStreamHandler {
+  private var eventSink: FlutterEventSink?
+  private var timer: Timer?
+  
+  func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink) -> FlutterError? {
+    eventSink = events
+    // 每秒发送一次连接状态
+    timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+      self?.eventSink?("connected") // 这里可以根据实际连接状态返回不同的值
+    }
+    return nil
+  }
+  
+  func onCancel(withArguments arguments: Any?) -> FlutterError? {
+    eventSink = nil
+    timer?.invalidate()
+    timer = nil
+    return nil
   }
 }
 

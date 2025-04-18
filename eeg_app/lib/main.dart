@@ -1,23 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'pages/monitor_page.dart';
-// import 'pages/test_page.dart';
-// import 'pages/settings/bluetooth_connect_page.dart';
 import 'pages/eeg_display_page.dart';
 import 'provider/eeg_provider.dart';
 import 'provider/bluetooth_provider.dart';
 import 'provider/monitor_provider.dart';
 import 'pages/setting_page.dart';
 import 'provider/robotdog_provider.dart';
+import 'pages/robot_dog_page.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  final eegProvider = EEGProvider();
+  final bluetoothProvider = BluetoothProvider();
+  final monitorProvider = MonitorProvider();
+  final robotDogProvider = RobotDogProvider();
+
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => EEGProvider()),
-        ChangeNotifierProvider(create: (_) => BluetoothProvider()),
-        ChangeNotifierProvider(create: (_) => MonitorProvider()),
-        ChangeNotifierProvider(create: (_) => RobotDogProvider()),
+        ChangeNotifierProvider.value(value: eegProvider),
+        ChangeNotifierProvider.value(value: bluetoothProvider),
+        ChangeNotifierProvider.value(value: monitorProvider),
+        ChangeNotifierProvider.value(value: robotDogProvider),
       ],
       child: const MyApp(),
     ),
@@ -55,17 +61,26 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
+  final List<Widget> _pages = [];
 
-  final _pages = [
-    MonitorPage(),
-    EEGDisplayPage(),
-    SettingsPage(),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _pages.addAll([
+      const MonitorPage(),
+      const EEGDisplayPage(),
+      const RobotDogPage(),
+      const SettingsPage(),
+    ]);
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _pages[_selectedIndex],
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: _pages,
+      ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           boxShadow: [
@@ -88,6 +103,10 @@ class _HomeScreenState extends State<HomeScreen> {
             BottomNavigationBarItem(
               icon: Icon(Icons.data_usage),
               label: "Display",
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.pets),
+              label: "Robot Dog",
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.settings),
