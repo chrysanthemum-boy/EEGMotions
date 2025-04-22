@@ -7,6 +7,7 @@ import CoreBluetooth
 @objc class AppDelegate: FlutterAppDelegate {
   var bluetoothManager: BluetoothManager?
   var coreMLModel: MLModel?
+  var currentModelName: String = "eeg_model"  // 添加当前模型名称
 
   override func application(
     _ application: UIApplication,
@@ -16,9 +17,9 @@ import CoreBluetooth
     
     // 在应用启动时自动加载 CoreML 模型
     do {
-      let modelURL = Bundle.main.url(forResource: "eeg_model", withExtension: "mlmodelc")!
+      let modelURL = Bundle.main.url(forResource: currentModelName, withExtension: "mlmodelc")!
       coreMLModel = try MLModel(contentsOf: modelURL)
-      print("✅ CoreML 模型初始化成功")
+      print("✅ CoreML 模型初始化成功: \(currentModelName)")
     } catch {
       print("❌ CoreML 模型初始化失败: \(error.localizedDescription)")
     }
@@ -37,6 +38,13 @@ import CoreBluetooth
         self.startPrediction(result: result)
       case "stopPrediction":
         self.stopPrediction(result: result)
+      case "switchModel":
+        if let args = call.arguments as? [String: Any],
+           let modelName = args["modelName"] as? String {
+          self.switchModel(modelName: modelName, result: result)
+        } else {
+          result(FlutterError(code: "BAD_ARGS", message: "Missing modelName", details: nil))
+        }
       default:
         result(FlutterMethodNotImplemented)
       }
@@ -81,6 +89,23 @@ import CoreBluetooth
   private func stopPrediction(result: @escaping FlutterResult) {
     print("⏹ 停止 EEG 预测")
     result(true)
+  }
+
+  private func switchModel(modelName: String, result: @escaping FlutterResult) {
+    do {
+      // 停止当前预测
+      stopPrediction(result: { _ in })
+      
+      // 加载新模型
+      let modelURL = Bundle.main.url(forResource: modelName, withExtension: "mlmodelc")!
+      coreMLModel = try MLModel(contentsOf: modelURL)
+      currentModelName = modelName
+      print("✅ 成功切换到模型: \(modelName)")
+      result(true)
+    } catch {
+      print("❌ 切换模型失败: \(error.localizedDescription)")
+      result(FlutterError(code: "SWITCH_FAILED", message: error.localizedDescription, details: nil))
+    }
   }
 
   // 📡 注册蓝牙通道

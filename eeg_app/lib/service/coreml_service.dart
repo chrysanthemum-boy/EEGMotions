@@ -39,6 +39,15 @@ class CoreMLService {
     }
   }
 
+  static Future<void> switchModel(String modelName) async {
+    try {
+      await platform.invokeMethod('switchModel', {'modelName': modelName});
+      print("🔄 切换到模型: $modelName");
+    } catch (e) {
+      print("❌ 切换模型失败: $e");
+    }
+  }
+
   static void setupEventChannel() {
     eventChannel.receiveBroadcastStream().listen((event) {
       print("📡 收到CoreML事件: $event");

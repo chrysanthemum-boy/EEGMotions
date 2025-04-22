@@ -63,7 +63,6 @@ func handleEEGData(_ data: [UInt8]) {
 // 主推理函数
 func predictEEG() {
     guard let lastFrame = eegBuffer.last, lastFrame.count == 16 else {
-        // print("⏳ 等待最新帧数据中...")
         return
     }
 
@@ -126,14 +125,11 @@ func predictEEG() {
 
         if consecutiveSame >= stabilityThreshold || predictionWindow.count < predictionWindowSize / 2 {
             let label = finalPrediction == 1 ? "Stress" : "Relaxed"
-            // print("✅ 稳定输出: \(label) (avgProb: \(avgProb), confidence: \(confidence))")
             eegEventSink?([
                 "data": lastFrame,
                 "stress": label,
                 "probability": avgProb
             ])
-        } else {
-            // print("⏳ 正在稳定中... (\(consecutiveSame + 1) 次相同预测)")
         }
 
     } catch {

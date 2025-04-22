@@ -18,7 +18,7 @@ class MonitorPage extends StatefulWidget {
 class _MonitorPageState extends State<MonitorPage> {
   StreamSubscription? _coremlSub;
   StreamSubscription? _connectionSub;
-  late Timer _timer;
+  // late Timer _timer;
   static const MethodChannel _voiceChannel = MethodChannel('accessibility_channel');
   static const EventChannel _connectionChannel = EventChannel('connection_status');
   bool _isInitialized = false;
@@ -280,6 +280,12 @@ class _MonitorPageState extends State<MonitorPage> {
                               ? "Disable Voice Alert"
                               : "Enable Voice Alert"),
                         ),
+                        const SizedBox(height: 16),
+                        ElevatedButton.icon(
+                          onPressed: () => _switchModel(context),
+                          icon: const Icon(Icons.swap_horiz),
+                          label: Text("Switch Model (${provider.currentModel})"),
+                        ),
                       ],
                     ],
                   ),
@@ -303,6 +309,27 @@ class _MonitorPageState extends State<MonitorPage> {
     final provider = context.read<MonitorProvider>();
     provider.toggleVoice();
     _announce(provider.voiceEnabled ? "Voice alert enabled" : "Voice alert disabled");
+  }
+
+  Future<void> _switchModel(BuildContext context) async {
+    final provider = context.read<MonitorProvider>();
+    final currentModel = provider.currentModel;
+    final newModel = currentModel == "eeg_model" ? "eeg_cnn_model" : "eeg_model";
+    
+    try {
+      await CoreMLService.switchModel(newModel);
+      provider.switchModel(newModel);
+      _announce("Switched to $newModel");
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Failed to switch model: $e"),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }
 

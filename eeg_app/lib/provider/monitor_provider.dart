@@ -1,5 +1,5 @@
 import 'dart:collection';
-import 'dart:math';
+// import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 
@@ -9,12 +9,14 @@ class MonitorProvider extends ChangeNotifier {
   bool _voiceEnabled = false;
   String? _deviceName;
   bool _isLoading = false;
+  String _currentModel = "eeg_model";
 
   String get status => _status;
   double get stressValue => _stressValue;
   bool get voiceEnabled => _voiceEnabled;
   String? get deviceName => _deviceName;
   bool get isLoading => _isLoading;
+  String get currentModel => _currentModel;
 
   void updatePrediction(String status, double stressValue) {
     if (_status != status || _stressValue != stressValue) {
@@ -39,6 +41,13 @@ class MonitorProvider extends ChangeNotifier {
   void setLoading(bool loading) {
     if (_isLoading != loading) {
       _isLoading = loading;
+      notifyListeners();
+    }
+  }
+
+  void switchModel(String modelName) {
+    if (_currentModel != modelName) {
+      _currentModel = modelName;
       notifyListeners();
     }
   }

@@ -5,7 +5,7 @@ import '../../service/bluetooth_service.dart';
 import '../../provider/bluetooth_provider.dart';
 import '../../provider/eeg_provider.dart';
 import '../../provider/monitor_provider.dart';
-import '../monitor_page.dart';
+// import '../monitor_page.dart';
 
 class BluetoothConnectPage extends StatefulWidget {
   const BluetoothConnectPage({super.key});

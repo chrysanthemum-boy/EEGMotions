@@ -19,6 +19,7 @@
 		B7BB6BA82DAD3E9F00735502 /* cnn_bilstm.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = B7BB6BA72DAD3E9F00735502 /* cnn_bilstm.mlpackage */; };
 		B7BB6BAA2DAE7B6800735502 /* CoreMLStreamHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7BB6BA92DAE7B6800735502 /* CoreMLStreamHandler.swift */; };
 		B7BB6BAC2DAE828800735502 /* eeg_model.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = B7BB6BAB2DAE828800735502 /* eeg_model.mlpackage */; };
+		B7E9B6742DB80C8700D106B0 /* eeg_cnn_model.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = B7E9B6732DB80C8700D106B0 /* eeg_cnn_model.mlpackage */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -67,6 +68,7 @@
 		B7BB6BA72DAD3E9F00735502 /* cnn_bilstm.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = cnn_bilstm.mlpackage; sourceTree = "<group>"; };
 		B7BB6BA92DAE7B6800735502 /* CoreMLStreamHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreMLStreamHandler.swift; sourceTree = "<group>"; };
 		B7BB6BAB2DAE828800735502 /* eeg_model.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = eeg_model.mlpackage; sourceTree = "<group>"; };
+		B7E9B6732DB80C8700D106B0 /* eeg_cnn_model.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = eeg_cnn_model.mlpackage; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -121,6 +123,7 @@
 		97C146F01CF9000F007C117D /* Runner */ = {
 			isa = PBXGroup;
 			children = (
+				B7E9B6732DB80C8700D106B0 /* eeg_cnn_model.mlpackage */,
 				B7BB6BAB2DAE828800735502 /* eeg_model.mlpackage */,
 				B7BB6BA92DAE7B6800735502 /* CoreMLStreamHandler.swift */,
 				B7BB6BA72DAD3E9F00735502 /* cnn_bilstm.mlpackage */,
@@ -288,6 +291,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				B7BB6BA82DAD3E9F00735502 /* cnn_bilstm.mlpackage in Sources */,
+				B7E9B6742DB80C8700D106B0 /* eeg_cnn_model.mlpackage in Sources */,
 				B7BB6BAC2DAE828800735502 /* eeg_model.mlpackage in Sources */,
 				74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */,
 				B75A92C62D936F4C00ECF2CC /* EEGNet.mlpackage in Sources */,
