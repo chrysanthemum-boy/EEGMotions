@@ -8,10 +8,10 @@ class RobotDogSettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<RobotDogProvider>(context);
-    final options = [
-      {'mode': 'Freeze', 'icon': Icons.stop_circle_outlined},
-      {'mode': 'Follow', 'icon': Icons.directions_walk},
-      {'mode': 'Play', 'icon': Icons.play_circle_outline},
+    final modeOptions = [
+      {'mode': 'Freeze', 'icon': Icons.pause_circle_outline},
+      {'mode': 'Dance', 'icon': Icons.music_note},
+      {'mode': 'Stop', 'icon': Icons.stop_circle_outlined},
     ];
 
     return Scaffold(
@@ -109,7 +109,7 @@ class RobotDogSettingsPage extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    ...options.map((option) {
+                    ...modeOptions.map((option) {
                       return Card(
                         elevation: 2,
                         margin: const EdgeInsets.only(bottom: 12),
@@ -166,9 +166,9 @@ class RobotDogSettingsPage extends StatelessWidget {
                                 provider.setStressAction(newValue);
                               }
                             },
-                            items: options.map<DropdownMenuItem<String>>((option) {
+                            items: modeOptions.map<DropdownMenuItem<String>>((option) {
                               return DropdownMenuItem<String>(
-                                value: option['mode'] as String,
+                                value: (option['mode'] as String).toLowerCase(),
                                 child: Row(
                                   children: [
                                     Icon(option['icon'] as IconData, color: Colors.red),
@@ -213,9 +213,9 @@ class RobotDogSettingsPage extends StatelessWidget {
                                 provider.setRelaxAction(newValue);
                               }
                             },
-                            items: options.map<DropdownMenuItem<String>>((option) {
+                            items: modeOptions.map<DropdownMenuItem<String>>((option) {
                               return DropdownMenuItem<String>(
-                                value: option['mode'] as String,
+                                value: (option['mode'] as String).toLowerCase(),
                                 child: Row(
                                   children: [
                                     Icon(option['icon'] as IconData, color: Colors.green),
@@ -248,9 +248,9 @@ class RobotDogSettingsPage extends StatelessWidget {
                           );
                           
                           // 测试连接
-                          if (provider.enabled) {
-                            provider.updateEmotion("Stress"); // 触发测试连接
-                          }
+                          // if (provider.enabled) {
+                          //   provider.updateEmotion("Stress"); // 触发测试连接
+                          // }
                           
                           Navigator.pop(context);
                         },

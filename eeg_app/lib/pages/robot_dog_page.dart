@@ -39,8 +39,10 @@ class _RobotDogPageState extends State<RobotDogPage> {
 
   void _startStatusUpdateTimer() {
     _statusUpdateTimer?.cancel();
-    _statusUpdateTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+    _statusUpdateTimer = Timer.periodic(const Duration(seconds: 1), (_) async {
       if (mounted) {
+        final robotDogProvider = Provider.of<RobotDogProvider>(context, listen: false);
+        await robotDogProvider.fetchStatus();
         setState(() {});
       }
     });
@@ -213,7 +215,7 @@ class _RobotDogPageState extends State<RobotDogPage> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              monitor.status,
+                              robotDog.mode,
                               style: TextStyle(
                                 color: monitor.status == "Stress" 
                                     ? Colors.red 
@@ -329,7 +331,7 @@ class _RobotDogPageState extends State<RobotDogPage> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      "Endpoint: ${robotDog.apiUrl}",
+                      "URL: ${robotDog.apiUrl}",
                       style: const TextStyle(color: Colors.grey),
                     ),
                     const SizedBox(height: 8),
@@ -356,18 +358,12 @@ class _RobotDogPageState extends State<RobotDogPage> {
                           ),
                         ),
                         const Spacer(),
-                        ElevatedButton(
-                          onPressed: () {
-                            robotDog.setEnabled(!robotDog.enabled);
+                        Switch(
+                          value: robotDog.enabled,
+                          onChanged: (value) {
+                            robotDog.setEnabled(value);
                           },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: robotDog.enabled ? Colors.red : Colors.green,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                          ),
-                          child: Text(robotDog.enabled ? "Disable" : "Enable"),
+                          activeColor: Colors.blue,
                         ),
                       ],
                     ),

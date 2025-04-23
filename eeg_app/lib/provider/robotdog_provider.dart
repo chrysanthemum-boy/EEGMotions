@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'dart:io';
 import 'dart:async';
+import 'dart:convert';
 
 class RobotDogProvider extends ChangeNotifier {
   bool _enabled = false;
@@ -9,21 +9,24 @@ class RobotDogProvider extends ChangeNotifier {
   String _lastEmotion = "Relaxed";
   bool _isNotifying = false;
   String _status = "Inactive";
-  String _stressAction = 'Follow';
-  String _relaxAction = 'Freeze';
+  String _stressAction = 'dance';
+  String _relaxAction = 'freeze';
+  String _stopAction = 'stop';
+  bool _robotConnected = false;
+  bool _controllerInitialized = false;
 
   // 基础主机地址
-  static const String _baseUrl = "http://192.168.0.135:5000";
+  static const String _baseUrl = "http://192.168.12.248:5000";
   
   // API路径映射
   final Map<String, String> _apiPaths = {
-    'Freeze': "/api/freeze",
-    'Follow': "/api/follow",
-    'Play': "/api/play",
+    'Freeze': "/command/freeze",
+    'Dance': "/command/dance",
+    'Stop': "/command/stop",
   };
 
   // 获取完整URL
-  String get apiUrl => "$_baseUrl${_apiPaths[_mode] ?? '/api/freeze'}";
+  String get apiUrl => "$_baseUrl/command";
 
   bool get enabled => _enabled;
   String get mode => _mode;
@@ -32,6 +35,8 @@ class RobotDogProvider extends ChangeNotifier {
   String get status => _status;
   String get stressAction => _stressAction;
   String get relaxAction => _relaxAction;
+  bool get robotConnected => _robotConnected;
+  bool get controllerInitialized => _controllerInitialized;
 
   void setStatus(String newStatus) {
     _status = newStatus;
@@ -44,6 +49,7 @@ class RobotDogProvider extends ChangeNotifier {
   }
 
   void setMode(String newMode) {
+    // final lowerMode = newMode.toLowerCase();
     if (_apiPaths.containsKey(newMode)) {
       _mode = newMode;
       notifyListeners();
@@ -51,60 +57,87 @@ class RobotDogProvider extends ChangeNotifier {
   }
 
   void setStressAction(String action) {
-    if (_apiPaths.containsKey(action)) {
+    // if (_apiPaths.containsKey(action)) {
       _stressAction = action;
       notifyListeners();
-    }
+    // }
   }
 
   void setRelaxAction(String action) {
-    if (_apiPaths.containsKey(action)) {
+    // if (_apiPaths.containsKey(action)) {
       _relaxAction = action;
       notifyListeners();
-    }
+    // }
   }
 
   void updateEmotion(String emotion) {
     _lastEmotion = emotion;
     if (_enabled) {
       if (emotion == "Stress") {
-        _mode = _stressAction;
-        _sendStressNotification();
-      } else {
-        _mode = _relaxAction;
-        _sendStressNotification();
+        setCommand(_stressAction);
+      } else if (emotion == "Relaxed") {
+        setCommand(_relaxAction);
+      } else if (emotion == "Stop") {
+        setCommand(_stopAction);
       }
     }
     notifyListeners();
   }
 
-  Future<void> _sendStressNotification() async {
-    if (_isNotifying) return;
-    
-    _isNotifying = true;
-    notifyListeners();
 
-    // 使用 compute 在后台线程执行网络请求
+  Future<void> setCommand(String command) async {
+    if (!_enabled) return;
+    
     try {
-      final response = await http.get(Uri.parse(apiUrl)).timeout(
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'command': command}),
+      ).timeout(
         const Duration(seconds: 5),
         onTimeout: () {
-          throw TimeoutException('Connection timeout. Please check:\n1. Robot dog is powered on\n2. Connected to correct WiFi\n3. IP address is correct');
+          throw TimeoutException('Connection timeout');
         },
       );
-      
-      if (response.statusCode != 200) {
-        print("❌ Server returned error status code: HTTP ${response.statusCode}");
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['status'] == 'success') {
+          _mode = command;
+          notifyListeners();
+        }
+      } else {
+        print("❌ Failed to set command: ${response.statusCode}");
       }
-    } on SocketException catch (e) {
-      print("❌ Network connection error: ${e.message}");
-    } on TimeoutException catch (e) {
-      print("❌ $e");
     } catch (e) {
-      print("❌ Unknown error occurred: $e");
-    } finally {
-      _isNotifying = false;
-      notifyListeners();
+      print("❌ Error setting command: $e");
+    }
+  }
+
+  Future<void> fetchStatus() async {
+    if (!_enabled) return;
+    
+    try {
+      final response = await http.get(
+        Uri.parse('$_baseUrl/status'),
+      ).timeout(
+        const Duration(seconds: 5),
+        onTimeout: () {
+          throw TimeoutException('Connection timeout');
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        _robotConnected = data['robot_connected'] ?? false;
+        _controllerInitialized = data['controller_initialized'] ?? false;
+        if (data['current_command'] != null) {
+          _mode = data['current_command'];
+        }
+        notifyListeners();
+      }
+    } catch (e) {
+      print("❌ Error fetching status: $e");
     }
   }
 }

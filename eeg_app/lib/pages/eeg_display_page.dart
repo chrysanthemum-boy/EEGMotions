@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../provider/eeg_provider.dart';
 import '../service/bluetooth_service.dart';
+import 'settings/bluetooth_connect_page.dart';
 
 class EEGDisplayPage extends StatefulWidget {
   const EEGDisplayPage({super.key});
@@ -124,6 +125,53 @@ class _EEGDisplayPageState extends State<EEGDisplayPage> with WidgetsBindingObse
         ),
         child: Consumer<EEGProvider>(
           builder: (context, eeg, _) {
+            if (!eeg.isConnected) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.signal_wifi_off,
+                      size: 64,
+                      color: Colors.grey.shade400,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      "No EEG data available",
+                      style: TextStyle(
+                        fontSize: 18,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      "Please connect to an EEG device",
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey.shade500,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const BluetoothConnectPage()),
+                        );
+                      },
+                      icon: const Icon(Icons.bluetooth, color: Colors.white),
+                      label: const Text("Connect Device"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
+
             final history = eeg.history;
             if (history.isEmpty || history.every((ch) => ch.isEmpty)) {
               return Center(

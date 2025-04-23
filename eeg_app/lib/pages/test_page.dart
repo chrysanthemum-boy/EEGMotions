@@ -14,7 +14,8 @@ class _TestPageState extends State<TestPage> {
 
   void _runTest() async {
     List<double> eegInput = List.generate(16000, (_) => Random().nextDouble());
-    String prediction = await CoreMLService.runPrediction(eegInput);
+    // String prediction = await CoreMLService.runPrediction(eegInput);
+    String prediction = "test";
 
     setState(() {
       _result = prediction;
