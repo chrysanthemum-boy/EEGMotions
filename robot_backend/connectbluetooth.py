@@ -7,7 +7,7 @@ import json
 
 
 class EEGRecorderBLE:
-    def __init__(self, interval_ms=4):
+    def __init__(self, interval_ms=200):
         # 初始化 SPI
         self.interval = interval_ms / 1000
         self.spi = spidev.SpiDev()
@@ -30,14 +30,14 @@ class EEGRecorderBLE:
         self.cs_line.request(cs_line_out)
         self.cs_line.set_value(1)
 
-        # 初始化按钮（可选）
-        button_pin_1 = 26
-        line_1 = chip.get_line(button_pin_1)
-        button_req = gpiod.line_request()
-        button_req.consumer = "Button"
-        button_req.request_type = gpiod.line_request.DIRECTION_INPUT
-        line_1.request(button_req)
-        self.line_1 = line_1
+        # # 初始化按钮（可选）
+        # button_pin_1 = 26
+        # line_1 = chip.get_line(button_pin_1)
+        # button_req = gpiod.line_request()
+        # button_req.consumer = "Button"
+        # button_req.request_type = gpiod.line_request.DIRECTION_INPUT
+        # line_1.request(button_req)
+        # self.line_1 = line_1
 
         # ADS1299 控制指令
         self.COMMANDS = {
@@ -177,7 +177,7 @@ class EEGRecorderBLE:
         # 发送连接成功消息到 Flutter
         self._send_connection_status(True)
         self.stop()
-        # raise KeyboardInterrupt  # 模拟 Ctrl+C，终止主循环
+        raise KeyboardInterrupt  # 模拟 Ctrl+C，终止主循环
 
     def on_disconnect(self):
         print("📡 设备已断开连接")
